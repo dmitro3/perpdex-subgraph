@@ -5,7 +5,7 @@ import {
     PositionChanged as PositionChangedEvent,
     PositionLiquidated as PositionLiquidatedEvent,
     ReferredPositionChanged,
-} from "../../generated/ClearingHouse/ClearingHouse"
+} from "../../generated/ClearingHousePerpdex/ClearingHousePerpdex"
 import { FundingPaymentSettled, LiquidityChanged, PositionChanged, PositionLiquidated } from "../../generated/schema"
 import { abs, BD_ZERO, BI_ZERO, fromSqrtPriceX96, fromWei } from "../utils/numbers"
 import {
@@ -160,78 +160,78 @@ export function handlePositionLiquidated(event: PositionLiquidatedEvent): void {
     traderMarket.save()
 }
 
-export function handleLiquidityChanged(event: LiquidityChangedEvent): void {
-    // insert LiquidityChanged
-    const liquidityChanged = new LiquidityChanged(
-        `${event.transaction.hash.toHexString()}-${event.logIndex.toString()}`,
-    )
-    liquidityChanged.blockNumberLogIndex = getBlockNumberLogIndex(event)
-    liquidityChanged.blockNumber = event.block.number
-    liquidityChanged.timestamp = event.block.timestamp
-    liquidityChanged.txHash = event.transaction.hash
-    liquidityChanged.maker = event.params.maker
-    liquidityChanged.baseToken = event.params.baseToken
-    liquidityChanged.quoteToken = event.params.quoteToken
-    liquidityChanged.lowerTick = BigInt.fromI32(event.params.lowerTick)
-    liquidityChanged.upperTick = BigInt.fromI32(event.params.upperTick)
-    liquidityChanged.base = fromWei(event.params.base)
-    liquidityChanged.quote = fromWei(event.params.quote)
-    liquidityChanged.liquidity = event.params.liquidity
-    liquidityChanged.quoteFee = fromWei(event.params.quoteFee)
+// export function handleLiquidityChanged(event: LiquidityChangedEvent): void {
+//     // insert LiquidityChanged
+//     const liquidityChanged = new LiquidityChanged(
+//         `${event.transaction.hash.toHexString()}-${event.logIndex.toString()}`,
+//     )
+//     liquidityChanged.blockNumberLogIndex = getBlockNumberLogIndex(event)
+//     liquidityChanged.blockNumber = event.block.number
+//     liquidityChanged.timestamp = event.block.timestamp
+//     liquidityChanged.txHash = event.transaction.hash
+//     liquidityChanged.maker = event.params.maker
+//     liquidityChanged.baseToken = event.params.baseToken
+//     liquidityChanged.quoteToken = event.params.quoteToken
+//     liquidityChanged.lowerTick = BigInt.fromI32(event.params.lowerTick)
+//     liquidityChanged.upperTick = BigInt.fromI32(event.params.upperTick)
+//     liquidityChanged.base = fromWei(event.params.base)
+//     liquidityChanged.quote = fromWei(event.params.quote)
+//     liquidityChanged.liquidity = event.params.liquidity
+//     liquidityChanged.quoteFee = fromWei(event.params.quoteFee)
 
-    // upsert Maker
-    // NOTE: we don't remove entities from Maker table even if they have no open orders
-    const maker = getOrCreateMaker(event.params.maker)
-    maker.blockNumber = event.block.number
-    maker.timestamp = event.block.timestamp
-    maker.collectedFee = maker.collectedFee.plus(liquidityChanged.quoteFee)
+//     // upsert Maker
+//     // NOTE: we don't remove entities from Maker table even if they have no open orders
+//     const maker = getOrCreateMaker(event.params.maker)
+//     maker.blockNumber = event.block.number
+//     maker.timestamp = event.block.timestamp
+//     maker.collectedFee = maker.collectedFee.plus(liquidityChanged.quoteFee)
 
-    // upsert Trader
-    const trader = getOrCreateTrader(event.params.maker)
-    trader.blockNumber = event.block.number
-    trader.timestamp = event.block.timestamp
-    trader.makerFee = trader.makerFee.plus(liquidityChanged.quoteFee)
+//     // upsert Trader
+//     const trader = getOrCreateTrader(event.params.maker)
+//     trader.blockNumber = event.block.number
+//     trader.timestamp = event.block.timestamp
+//     trader.makerFee = trader.makerFee.plus(liquidityChanged.quoteFee)
 
-    // upsert TraderMarket
-    const traderMarket = getOrCreateTraderMarket(event.params.maker, event.params.baseToken)
-    traderMarket.blockNumber = event.block.number
-    traderMarket.timestamp = event.block.timestamp
-    traderMarket.makerFee = traderMarket.makerFee.plus(liquidityChanged.quoteFee)
+//     // upsert TraderMarket
+//     const traderMarket = getOrCreateTraderMarket(event.params.maker, event.params.baseToken)
+//     traderMarket.blockNumber = event.block.number
+//     traderMarket.timestamp = event.block.timestamp
+//     traderMarket.makerFee = traderMarket.makerFee.plus(liquidityChanged.quoteFee)
 
-    // upsert OpenOrder
-    const openOrder = getOrCreateOpenOrder(
-        event.params.maker,
-        event.params.baseToken,
-        liquidityChanged.lowerTick,
-        liquidityChanged.upperTick,
-    )
-    openOrder.blockNumber = event.block.number
-    openOrder.timestamp = event.block.timestamp
-    openOrder.liquidity = openOrder.liquidity.plus(liquidityChanged.liquidity)
-    if (openOrder.liquidity.equals(BI_ZERO)) {
-        openOrder.baseAmount = BD_ZERO
-        openOrder.quoteAmount = BD_ZERO
-        openOrder.collectedFeeInThisLifecycle = BD_ZERO
-    } else {
-        openOrder.baseAmount = openOrder.baseAmount.plus(liquidityChanged.base)
-        openOrder.quoteAmount = openOrder.quoteAmount.plus(liquidityChanged.quote)
-        openOrder.collectedFeeInThisLifecycle = openOrder.collectedFeeInThisLifecycle.plus(liquidityChanged.quoteFee)
-    }
-    openOrder.collectedFee = openOrder.collectedFee.plus(liquidityChanged.quoteFee)
+//     // upsert OpenOrder
+//     const openOrder = getOrCreateOpenOrder(
+//         event.params.maker,
+//         event.params.baseToken,
+//         liquidityChanged.lowerTick,
+//         liquidityChanged.upperTick,
+//     )
+//     openOrder.blockNumber = event.block.number
+//     openOrder.timestamp = event.block.timestamp
+//     openOrder.liquidity = openOrder.liquidity.plus(liquidityChanged.liquidity)
+//     if (openOrder.liquidity.equals(BI_ZERO)) {
+//         openOrder.baseAmount = BD_ZERO
+//         openOrder.quoteAmount = BD_ZERO
+//         openOrder.collectedFeeInThisLifecycle = BD_ZERO
+//     } else {
+//         openOrder.baseAmount = openOrder.baseAmount.plus(liquidityChanged.base)
+//         openOrder.quoteAmount = openOrder.quoteAmount.plus(liquidityChanged.quote)
+//         openOrder.collectedFeeInThisLifecycle = openOrder.collectedFeeInThisLifecycle.plus(liquidityChanged.quoteFee)
+//     }
+//     openOrder.collectedFee = openOrder.collectedFee.plus(liquidityChanged.quoteFee)
 
-    // upsert market
-    const market = getOrCreateMarket(event.params.baseToken)
-    market.baseAmount = market.baseAmount.plus(liquidityChanged.base)
-    market.quoteAmount = market.quoteAmount.plus(liquidityChanged.quote)
+//     // upsert market
+//     const market = getOrCreateMarket(event.params.baseToken)
+//     market.baseAmount = market.baseAmount.plus(liquidityChanged.base)
+//     market.quoteAmount = market.quoteAmount.plus(liquidityChanged.quote)
 
-    // commit changes
-    liquidityChanged.save()
-    maker.save()
-    trader.save()
-    traderMarket.save()
-    openOrder.save()
-    market.save()
-}
+//     // commit changes
+//     liquidityChanged.save()
+//     maker.save()
+//     trader.save()
+//     traderMarket.save()
+//     openOrder.save()
+//     market.save()
+// }
 
 export function handleFundingPaymentSettled(event: FundingPaymentSettledEvent): void {
     // insert FundingPaymentSettled

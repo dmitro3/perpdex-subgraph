@@ -1,7 +1,7 @@
 # MarketRegistry
 
 type Protocol @entity {
-    "hardcoded as 'perpetual-protocol'"
+    "hardcoded as 'perpdex'"
     id: ID!
     "network name"
     network: String!

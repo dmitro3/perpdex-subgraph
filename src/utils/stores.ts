@@ -21,7 +21,7 @@ export function getBlockNumberLogIndex(event: ethereum.Event): BigInt {
 }
 
 export function getOrCreateProtocol(): Protocol {
-    const protocolId = "perpetual-protocol"
+    const protocolId = "perpdex"
     let protocol = Protocol.load(protocolId)
     if (!protocol) {
         protocol = new Protocol(protocolId)

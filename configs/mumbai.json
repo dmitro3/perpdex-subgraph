@@ -1,0 +1,62 @@
+{
+  "chainId": 80001,
+  "contracts": {
+    "ChainlinkPriceFeed": {
+      "address": "0xa4F2d54AB8996141c727Ae92caa65dF82CCB73d9",
+      "createdBlockNumber": 25855153,
+      "name": ""
+    },
+    "AccountBalancePerpdex": {
+      "address": "0xD7c3F4A5443b3CAf75c364B0DB51465C04AaBBd3",
+      "createdBlockNumber": 25855169,
+      "name": "contracts/AccountBalancePerpdex.sol:AccountBalancePerpdex"
+    },
+    "ClearingHousePerpdex": {
+      "address": "0x03E761Ab35a513fa8fB264Dafee090eDDc220886",
+      "createdBlockNumber": 25855179,
+      "name": "contracts/ClearingHousePerpdex.sol:ClearingHousePerpdex"
+    },
+    "ClearingHouseConfig": {
+      "address": "0xdBfDF592Ea1460DA501E0d5a8A1Eae6F37B6675E",
+      "createdBlockNumber": 25855162,
+      "name": "contracts/ClearingHouseConfig.sol:ClearingHouseConfig"
+    },
+    "ExchangePerpdex": {
+      "address": "0x595AE8530b7b991dDB03727304904DC1217c7F94",
+      "createdBlockNumber": 25855171,
+      "name": "contracts/ExchangePerpdex.sol:ExchangePerpdex"
+    },
+    "InsuranceFund": {
+      "address": "0x6be84eb2F0f8920D5236D1EE2eCECB732f69a5B7",
+      "createdBlockNumber": 25855174,
+      "name": "contracts/InsuranceFund.sol:InsuranceFund"
+    },
+    "MarketRegistryPerpdex": {
+      "address": "0x30d42bcDAf2c9261986246C2969A1B08A6eA4e6A",
+      "createdBlockNumber": 25855165,
+      "name": "contracts/MarketRegistryPerpdex.sol:MarketRegistryPerpdex"
+    },
+    "OrderBookUniswapV2": {
+      "address": "0xb3D7cA5d27a5d55b2599710511D7F77c82B1cbFD",
+      "createdBlockNumber": 25855167,
+      "name": "contracts/OrderBookUniswapV2.sol:OrderBookUniswapV2"
+    },
+    "QuoteToken": {
+      "address": "0xEc4C91164c98041F71649fD8D3C124ee54e084d4",
+      "createdBlockNumber": 25855155,
+      "name": "contracts/QuoteToken.sol:QuoteToken"
+    },
+    "Vault": {
+      "address": "0x6AeC6D37DbB613C0Bc8AceCDF56058bAA712c73A",
+      "createdBlockNumber": 25855176,
+      "name": "contracts/Vault.sol:Vault"
+    }
+  },
+  "externalContracts": {
+    "DefaultProxyAdmin": "0x0715A7794a1dc8e42615F059dD6e406A6594651A",
+    "USDC": "0xe11A86849d99F524cAC3E7A0Ec1241828e332C62",
+    "UniswapV2Factory": "0x3659defD3a06370129A990b67e4D0D144DbC1adC"
+  },
+  "network": "mumbai",
+  "version": "1.0.0"
+}

@@ -1,5 +1,5 @@
 import { BigInt } from "@graphprotocol/graph-ts"
-import { FeeRatioChanged, PoolAdded } from "../../generated/MarketRegistry/MarketRegistry"
+import { FeeRatioChanged, PoolAdded } from "../../generated/MarketRegistryPerpdex/MarketRegistryPerpdex"
 import { QuoteTokenAddress } from "../constants"
 import { BI_ONE } from "../utils/numbers"
 import { getOrCreateMarket, getOrCreateProtocol } from "../utils/stores"

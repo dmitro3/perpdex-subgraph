@@ -1,4 +1,4 @@
-import { PnlRealized as PnlRealizedEvent } from "../../generated/AccountBalance/AccountBalance"
+import { PnlRealized as PnlRealizedEvent } from "../../generated/AccountBalancePerpdex/AccountBalancePerpdex"
 import { BadDebtHappened, PnlRealized } from "../../generated/schema"
 import { getBadDebt } from "../utils/models"
 import { BD_ZERO, fromWei } from "../utils/numbers"

@@ -1,4 +1,4 @@
-import { FundingUpdated as FundingUpdatedEvent } from "../../generated/Exchange/Exchange"
+import { FundingUpdated as FundingUpdatedEvent } from "../../generated/ExchangePerpdex/ExchangePerpdex"
 import { FundingUpdated } from "../../generated/schema"
 import { fromWei } from "../utils/numbers"
 import { getBlockNumberLogIndex } from "../utils/stores"
