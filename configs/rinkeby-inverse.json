@@ -1,0 +1,62 @@
+{
+  "chainId": 4,
+  "contracts": {
+    "ChainlinkPriceFeed": {
+      "address": "0xb7A43Aa4c6D5cF4251754cD2AADb47B3b50202B9",
+      "createdBlockNumber": 10501134,
+      "name": ""
+    },
+    "AccountBalancePerpdex": {
+      "address": "0xc0d8E129C2E4e1671D01b181FCEb398B7d9D78Cb",
+      "createdBlockNumber": 10501151,
+      "name": "contracts/AccountBalancePerpdex.sol:AccountBalancePerpdex"
+    },
+    "ClearingHousePerpdex": {
+      "address": "0xb0Bd315C52Ebdb222AB32888eD459bd2068a5032",
+      "createdBlockNumber": 10501161,
+      "name": "contracts/ClearingHousePerpdex.sol:ClearingHousePerpdex"
+    },
+    "ClearingHouseConfig": {
+      "address": "0x8DB6bF46d8742f6dDAD7d9a94bEBa4a0ca39b09B",
+      "createdBlockNumber": 10501145,
+      "name": "contracts/ClearingHouseConfig.sol:ClearingHouseConfig"
+    },
+    "ExchangePerpdex": {
+      "address": "0x42C4e9A85E9f253B8B7063ee4E0D248392F598ae",
+      "createdBlockNumber": 10501153,
+      "name": "contracts/ExchangePerpdex.sol:ExchangePerpdex"
+    },
+    "InsuranceFund": {
+      "address": "0x097B60e43AE87dBd6AcFF70b37F040Bbb07eb793",
+      "createdBlockNumber": 10501156,
+      "name": "contracts/InsuranceFund.sol:InsuranceFund"
+    },
+    "MarketRegistryPerpdex": {
+      "address": "0x3D9cA7C2697d3C001DC9F8d57A8d7C6d0627fEfC",
+      "createdBlockNumber": 10501147,
+      "name": "contracts/MarketRegistryPerpdex.sol:MarketRegistryPerpdex"
+    },
+    "OrderBookUniswapV2": {
+      "address": "0x3De38dA0deEbC2767DBeac435BcC3D1Ca63881da",
+      "createdBlockNumber": 10501149,
+      "name": "contracts/OrderBookUniswapV2.sol:OrderBookUniswapV2"
+    },
+    "QuoteToken": {
+      "address": "0xB1bfA88186Bd0bd083F1C48dddB34fE1dFb9D70B",
+      "createdBlockNumber": 10501136,
+      "name": "contracts/QuoteToken.sol:QuoteToken"
+    },
+    "Vault": {
+      "address": "0xA9AfE72cc4EAEEf709dA2a5C2768DeF13bf12E6B",
+      "createdBlockNumber": 10501158,
+      "name": "contracts/Vault.sol:Vault"
+    }
+  },
+  "externalContracts": {
+    "DefaultProxyAdmin": "0x8A753747A1Fa494EC906cE90E9f37563A8AF630e",
+    "USDC": "0xeb8f08a975Ab53E34D8a0330E0D34de942C95926",
+    "UniswapV2Factory": "0xd9100b780E772f261DFBEf40C6E3A1BbE25bF694"
+  },
+  "network": "rinkeby",
+  "version": "1.0.0"
+}

@@ -8,6 +8,10 @@
     -   Explorer: `https://thegraph.com/hosted-service/subgraph/krkzts/perpdex-mumbai`
     -   HTTP: `https://api.thegraph.com/subgraphs/name/krkzts/perpdex-mumbai`
     -   WebSocket: `wss:/api.thegraph.com/subgraphs/name/krkzts/perpdex-mumbai`
+-   Rinkeby Inverse
+    -   Explorer: `https://thegraph.com/hosted-service/subgraph/krkzts/perpdex-rinkeby-inverse`
+    -   HTTP: `https://api.thegraph.com/subgraphs/name/krkzts/perpdex-rinkeby-inverse`
+    -   WebSocker: `wss://api.thegraph.com/subgraphs/name/krkzts/perpdex-rinkeby-inverse`
 
 ```bash
 npm i
