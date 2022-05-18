@@ -1,5 +1,9 @@
 # perpdex-subgraph
 
+## Contribution
+
+Please see [CONTRIBUTING.md](CONTRIBUTING.md)
+
 ## Subgraphs
 
 ### The Graph
