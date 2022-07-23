@@ -1,0 +1,12 @@
+{
+  "chainId": 4,
+  "contracts": {
+    "PerpdexExchange": {
+      "address": "0x335E2DF76eA6d5d4A82E45d2b917F84a747f0E82",
+      "createdBlockNumber": 10875349,
+      "name": "contracts/PerpdexExchange.sol:PerpdexExchange"
+    }
+  },
+  "network": "rinkeby",
+  "version": "v1"
+}
