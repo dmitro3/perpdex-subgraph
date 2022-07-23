@@ -12,7 +12,9 @@
     "generate-constants:rinkeby": "yarn prepare:rinkeby && mustache configs/rinkeby.json src/constants/index.ts.template > src/constants/index.ts",
     "codegen:rinkeby": "yarn generate-manifest:rinkeby && yarn generate-constants:rinkeby && graph codegen",
     "deploy-the-graph:rinkeby-test": "yarn codegen:rinkeby && graph deploy --product hosted-service krkzts/perpdex-rinkeby-inverse",
-    "health-check": "ts-node ./scripts/healthCheck.ts"
+    "health-check": "ts-node ./scripts/healthCheck.ts",
+    "prepare": "husky install",
+    "lint-fix": "prettier --write src/**/*.ts"
   },
   "author": "",
   "license": "BSD 3-Clause License",
@@ -23,8 +25,28 @@
     "@types/node-fetch": "2.5.12",
     "mustache": "4.2.0",
     "node-fetch": "2.6.1",
-    "prettier": "2.3.2",
     "ts-node": "^10.9.1",
+    "eslint-config-prettier": "^8.5.0",
+    "husky": "^8.0.1",
+    "lint-staged": "^13.0.3",
+    "prettier": "^2.7.1",
     "typescript": "^4.7.4"
+  },
+  "lint-staged": {
+    "*.ts": [
+      "prettier --write"
+    ],
+    "*.yaml": [
+      "prettier --write"
+    ],
+    "*.yml": [
+      "prettier --write"
+    ],
+    "*.json": [
+      "prettier --write"
+    ],
+    "*.graphql": [
+      "prettier --write"
+    ]
   }
 }
