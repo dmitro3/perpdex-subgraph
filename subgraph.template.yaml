@@ -6,11 +6,11 @@ schema:
 dataSources:
     - kind: ethereum/contract
       name: PerpdexExchange
-      network: { { network } }
+      network: {{ network }}
       source:
           abi: PerpdexExchange
           address: "{{ contracts.PerpdexExchange.address }}"
-          startBlock: { { contracts.PerpdexExchange.createdBlockNumber } }
+          startBlock: {{ contracts.PerpdexExchange.createdBlockNumber }}
       mapping:
           kind: ethereum/events
           apiVersion: 0.0.5
