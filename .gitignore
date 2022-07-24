@@ -107,6 +107,7 @@ build/
 data/
 generated/
 src/constants/index.ts
+subgraph.yaml
 
 # webstorm
 .idea
