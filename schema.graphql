@@ -457,7 +457,7 @@ type DaySummary @entity {
     id: ID!
 
     trader: String!
-    "integer portion of timeStamp divided by 8640000"
+    "integer portion of timeStamp divided by 86400"
     dayID: Int!
     timestamp: BigInt!
     "total pnl aggregated per day for trader"
