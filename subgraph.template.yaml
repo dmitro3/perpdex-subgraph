@@ -6,11 +6,11 @@ schema:
 dataSources:
     - kind: ethereum/contract
       name: PerpdexExchange
-      network: {{ network }}
+      network: { { network } }
       source:
           abi: PerpdexExchange
           address: "{{ contracts.PerpdexExchange.address }}"
-          startBlock: {{ contracts.PerpdexExchange.createdBlockNumber }}
+          startBlock: { { contracts.PerpdexExchange.createdBlockNumber } }
       mapping:
           kind: ethereum/events
           apiVersion: 0.0.5
@@ -18,11 +18,19 @@ dataSources:
           file: ./src/mappings/perpdexExchange.ts
           entities:
               - Deposited
-              - Trader
+              - PositionChanged
               - Protocol
+              - Market
+              - Trader
+              - TraderTakerInfo
+              - PositionHistory
+              - Candle
+              - DaySummary
           abis:
               - name: PerpdexExchange
                 file: ./abis/PerpdexExchange.abi.json
           eventHandlers:
               - event: Deposited(indexed address,uint256)
                 handler: handleDeposited
+              - event: PositionChanged(indexed address,indexed address,int256,int256,int256,uint256,uint256,uint256)
+                handler: handlePositionChanged
