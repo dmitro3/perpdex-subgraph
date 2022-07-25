@@ -19,12 +19,15 @@ dataSources:
           entities:
               - Deposited
               - ProtocolFeeTransferred
+              - LiquidityAddedExchange
               - PositionChanged
               - Protocol
               - Market
               - Trader
               - TraderTakerInfo
+              - TraderMakerInfo
               - PositionHistory
+              - LiquidityHistory
               - Candle
               - DaySummary
           abis:
@@ -37,6 +40,8 @@ dataSources:
                 handler: handleWithdrawn
               - event: ProtocolFeeTransferred(indexed address,uint256)
                 handler: handleProtocolFeeTransferred
+              - event: LiquidityAdded(indexed address,indexed address,uint256,uint256,uint256,uint256,uint256,uint256,uint256)
+                handler: handleLiquidityAddedExchange
               - event: PositionChanged(indexed address,indexed address,int256,int256,int256,uint256,uint256,uint256)
                 handler: handlePositionChanged
               - event: PositionLiquidated(indexed address,indexed address,indexed address,int256,int256,int256,uint256,uint256,uint256,uint256,uint256,uint256)

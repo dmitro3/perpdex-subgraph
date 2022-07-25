@@ -1,21 +1,30 @@
 import {
     Deposited as DepositedEvent,
+    LiquidityAdded as LiquidityAddedExchangeEvent,
     PositionChanged as PositionChangedEvent,
     PositionLiquidated as PositionLiquidatedEvent,
     ProtocolFeeTransferred as ProtocolFeeTransferredEvent,
     Withdrawn as WithdrawnEvent,
 } from "../../generated/PerpdexExchange/PerpdexExchange"
-import { Deposited, PositionChanged, ProtocolFeeTransferred, Withdrawn } from "../../generated/schema"
+import {
+    Deposited,
+    LiquidityAddedExchange,
+    PositionChanged,
+    ProtocolFeeTransferred,
+    Withdrawn,
+} from "../../generated/schema"
 import { BI_ZERO, Q96 } from "../utils/constants"
 import { pushMarket } from "../utils/model"
 import {
     createCandle,
+    createLiquidityHistory,
     createPositionHistory,
     getBlockNumberLogIndex,
     getOrCreateDaySummary,
     getOrCreateMarket,
     getOrCreateProtocol,
     getOrCreateTrader,
+    getOrCreateTraderMakerInfo,
     getOrCreateTraderTakerInfo,
 } from "../utils/stores"
 
@@ -80,6 +89,66 @@ export function handleProtocolFeeTransferred(event: ProtocolFeeTransferredEvent)
     protocolFeeTransferred.save()
     trader.save()
     protocol.save()
+}
+
+export function handleLiquidityAddedExchange(event: LiquidityAddedExchangeEvent): void {
+    const liquidityAddedExchange = new LiquidityAddedExchange(
+        `${event.transaction.hash.toHexString()}-${event.logIndex.toString()}`,
+    )
+    liquidityAddedExchange.exchange = event.address.toHexString()
+    liquidityAddedExchange.blockNumberLogIndex = getBlockNumberLogIndex(event)
+    liquidityAddedExchange.timestamp = event.block.timestamp
+    liquidityAddedExchange.trader = event.params.trader.toHexString()
+    liquidityAddedExchange.market = event.params.market.toHexString()
+    liquidityAddedExchange.base = event.params.base
+    liquidityAddedExchange.quote = event.params.quote
+    liquidityAddedExchange.liquidity = event.params.liquidity
+    liquidityAddedExchange.cumBasePerLiquidityX96 = event.params.cumBasePerLiquidityX96
+    liquidityAddedExchange.cumQuotePerLiquidityX96 = event.params.cumQuotePerLiquidityX96
+    liquidityAddedExchange.baseBalancePerShareX96 = event.params.baseBalancePerShareX96
+    liquidityAddedExchange.sharePriceAfterX96 = event.params.sharePriceAfterX96
+
+    const protocol = getOrCreateProtocol()
+    protocol.timestamp = event.block.timestamp
+
+    const market = getOrCreateMarket(liquidityAddedExchange.market)
+    market.baseBalancePerShareX96 = liquidityAddedExchange.baseBalancePerShareX96
+    market.sharePriceAfterX96 = liquidityAddedExchange.sharePriceAfterX96
+    market.timestamp = event.block.timestamp
+
+    const trader = getOrCreateTrader(event.params.trader.toHexString())
+    pushMarket(trader.markets, liquidityAddedExchange.market)
+    trader.timestamp = event.block.timestamp
+
+    const traderMakerInfo = getOrCreateTraderMakerInfo(liquidityAddedExchange.trader, liquidityAddedExchange.market)
+    traderMakerInfo.liquidity = traderMakerInfo.liquidity.plus(liquidityAddedExchange.liquidity)
+    traderMakerInfo.cumBaseSharePerLiquidityX96 = liquidityAddedExchange.cumBasePerLiquidityX96
+    traderMakerInfo.cumQuotePerLiquidityX96 = liquidityAddedExchange.cumQuotePerLiquidityX96
+    traderMakerInfo.timestamp = event.block.timestamp
+
+    createLiquidityHistory(
+        liquidityAddedExchange.trader,
+        liquidityAddedExchange.market,
+        event.block.timestamp,
+        liquidityAddedExchange.base,
+        liquidityAddedExchange.quote,
+        liquidityAddedExchange.liquidity,
+    )
+
+    createCandle(
+        liquidityAddedExchange.market,
+        event.block.timestamp,
+        liquidityAddedExchange.sharePriceAfterX96,
+        liquidityAddedExchange.baseBalancePerShareX96,
+        BI_ZERO,
+        BI_ZERO,
+    )
+
+    liquidityAddedExchange.save()
+    protocol.save()
+    market.save()
+    trader.save()
+    traderMakerInfo.save()
 }
 
 export function handlePositionChanged(event: PositionChangedEvent): void {
