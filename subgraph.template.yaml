@@ -26,6 +26,7 @@ dataSources:
               - ImRatioChanged
               - MmRatioChanged
               - LiquidationRewardConfigChanged
+              - ProtocolFeeRatioChanged
               - Protocol
               - Market
               - Trader
@@ -61,4 +62,6 @@ dataSources:
                 handler: handleMmRatioChanged
               - event:  LiquidationRewardConfigChanged(uint24,uint16)
                 handler: handleLiquidationRewardConfigChanged
+              - event:  ProtocolFeeRatioChanged(uint24)
+                handler: handleProtocolFeeRatioChanged
 

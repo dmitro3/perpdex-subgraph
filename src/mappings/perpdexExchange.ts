@@ -8,6 +8,7 @@ import {
     MmRatioChanged as MmRatioChangedEvent,
     PositionChanged as PositionChangedEvent,
     PositionLiquidated as PositionLiquidatedEvent,
+    ProtocolFeeRatioChanged as ProtocolFeeRatioChangedEvent,
     ProtocolFeeTransferred as ProtocolFeeTransferredEvent,
     Withdrawn as WithdrawnEvent,
 } from "../../generated/PerpdexExchange/PerpdexExchange"
@@ -20,6 +21,7 @@ import {
     MaxMarketsPerAccountChanged,
     MmRatioChanged,
     PositionChanged,
+    ProtocolFeeRatioChanged,
     ProtocolFeeTransferred,
     Withdrawn,
 } from "../../generated/schema"
@@ -462,5 +464,22 @@ export function handleLiquidationRewardConfigChanged(event: LiquidationRewardCon
     protocol.timestamp = event.block.timestamp
 
     liquidationRewardConfigChanged.save()
+    protocol.save()
+}
+
+export function handleProtocolFeeRatioChanged(event: ProtocolFeeRatioChangedEvent): void {
+    const protocolFeeRatioChanged = new ProtocolFeeRatioChanged(
+        `${event.transaction.hash.toHexString()}-${event.logIndex.toString()}`,
+    )
+    protocolFeeRatioChanged.exchange = event.address.toHexString()
+    protocolFeeRatioChanged.blockNumberLogIndex = getBlockNumberLogIndex(event)
+    protocolFeeRatioChanged.timestamp = event.block.timestamp
+    protocolFeeRatioChanged.value = event.params.value
+
+    const protocol = getOrCreateProtocol()
+    protocol.protocolFeeRatio = protocolFeeRatioChanged.value
+    protocol.timestamp = event.block.timestamp
+
+    protocolFeeRatioChanged.save()
     protocol.save()
 }
