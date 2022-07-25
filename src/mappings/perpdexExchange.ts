@@ -1,6 +1,7 @@
 import {
     Deposited as DepositedEvent,
     LiquidityAdded as LiquidityAddedExchangeEvent,
+    LiquidityRemoved as LiquidityRemovedExchangeEvent,
     PositionChanged as PositionChangedEvent,
     PositionLiquidated as PositionLiquidatedEvent,
     ProtocolFeeTransferred as ProtocolFeeTransferredEvent,
@@ -9,6 +10,7 @@ import {
 import {
     Deposited,
     LiquidityAddedExchange,
+    LiquidityRemovedExchange,
     PositionChanged,
     ProtocolFeeTransferred,
     Withdrawn,
@@ -149,6 +151,85 @@ export function handleLiquidityAddedExchange(event: LiquidityAddedExchangeEvent)
     market.save()
     trader.save()
     traderMakerInfo.save()
+}
+
+export function handleLiquidityRemovedExchange(event: LiquidityRemovedExchangeEvent): void {
+    const liquidityRemovedExchange = new LiquidityRemovedExchange(
+        `${event.transaction.hash.toHexString()}-${event.logIndex.toString()}`,
+    )
+    liquidityRemovedExchange.exchange = event.address.toHexString()
+    liquidityRemovedExchange.blockNumberLogIndex = getBlockNumberLogIndex(event)
+    liquidityRemovedExchange.timestamp = event.block.timestamp
+    liquidityRemovedExchange.trader = event.params.trader.toHexString()
+    liquidityRemovedExchange.market = event.params.market.toHexString()
+    liquidityRemovedExchange.liquidator = event.params.liquidator.toHexString()
+    liquidityRemovedExchange.base = event.params.base
+    liquidityRemovedExchange.quote = event.params.quote
+    liquidityRemovedExchange.liquidity = event.params.liquidity
+    liquidityRemovedExchange.takerBase = event.params.takerBase
+    liquidityRemovedExchange.takerQuote = event.params.takerQuote
+    liquidityRemovedExchange.realizedPnl = event.params.realizedPnl
+    liquidityRemovedExchange.baseBalancePerShareX96 = event.params.baseBalancePerShareX96
+    liquidityRemovedExchange.sharePriceAfterX96 = event.params.sharePriceAfterX96
+
+    const protocol = getOrCreateProtocol()
+    protocol.timestamp = event.block.timestamp
+
+    const market = getOrCreateMarket(liquidityRemovedExchange.market)
+    market.baseBalancePerShareX96 = liquidityRemovedExchange.baseBalancePerShareX96
+    market.sharePriceAfterX96 = liquidityRemovedExchange.sharePriceAfterX96
+    market.timestamp = event.block.timestamp
+
+    const trader = getOrCreateTrader(liquidityRemovedExchange.trader)
+    pushMarket(trader.markets, liquidityRemovedExchange.market)
+    trader.collateralBalance = trader.collateralBalance.plus(liquidityRemovedExchange.realizedPnl)
+    trader.timestamp = event.block.timestamp
+
+    const traderTakerInfo = getOrCreateTraderTakerInfo(liquidityRemovedExchange.trader, liquidityRemovedExchange.market)
+    traderTakerInfo.baseBalanceShare = traderTakerInfo.baseBalanceShare.plus(liquidityRemovedExchange.takerBase)
+    traderTakerInfo.baseBalance = traderTakerInfo.baseBalanceShare
+        .times(liquidityRemovedExchange.baseBalancePerShareX96)
+        .div(Q96)
+    traderTakerInfo.quoteBalance = traderTakerInfo.quoteBalance
+        .plus(liquidityRemovedExchange.takerQuote)
+        .minus(liquidityRemovedExchange.realizedPnl)
+    traderTakerInfo.entryPrice =
+        traderTakerInfo.baseBalance == BI_ZERO ? BI_ZERO : traderTakerInfo.quoteBalance.div(traderTakerInfo.baseBalance)
+    traderTakerInfo.timestamp = event.block.timestamp
+
+    const traderMakerInfo = getOrCreateTraderMakerInfo(liquidityRemovedExchange.trader, liquidityRemovedExchange.market)
+    traderMakerInfo.liquidity = traderMakerInfo.liquidity.minus(liquidityRemovedExchange.liquidity)
+    traderMakerInfo.timestamp = event.block.timestamp
+
+    const daySummary = getOrCreateDaySummary(liquidityRemovedExchange.trader, event.block.timestamp)
+    daySummary.realizedPnl = daySummary.realizedPnl.plus(liquidityRemovedExchange.realizedPnl)
+    daySummary.timestamp = event.block.timestamp
+
+    createLiquidityHistory(
+        liquidityRemovedExchange.trader,
+        liquidityRemovedExchange.market,
+        event.block.timestamp,
+        liquidityRemovedExchange.base.neg(),
+        liquidityRemovedExchange.quote.neg(),
+        liquidityRemovedExchange.liquidity.neg(),
+    )
+
+    createCandle(
+        liquidityRemovedExchange.market,
+        event.block.timestamp,
+        liquidityRemovedExchange.sharePriceAfterX96,
+        liquidityRemovedExchange.baseBalancePerShareX96,
+        BI_ZERO,
+        BI_ZERO,
+    )
+
+    liquidityRemovedExchange.save()
+    protocol.save()
+    market.save()
+    trader.save()
+    traderTakerInfo.save()
+    traderMakerInfo.save()
+    daySummary.save()
 }
 
 export function handlePositionChanged(event: PositionChangedEvent): void {

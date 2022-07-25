@@ -20,6 +20,7 @@ dataSources:
               - Deposited
               - ProtocolFeeTransferred
               - LiquidityAddedExchange
+              - LiquidityRemovedExchange
               - PositionChanged
               - Protocol
               - Market
@@ -42,6 +43,8 @@ dataSources:
                 handler: handleProtocolFeeTransferred
               - event: LiquidityAdded(indexed address,indexed address,uint256,uint256,uint256,uint256,uint256,uint256,uint256)
                 handler: handleLiquidityAddedExchange
+              - event: LiquidityRemoved(indexed address,indexed address,address,uint256,uint256,uint256,int256,int256,int256,uint256,uint256)
+                handler: handleLiquidityRemovedExchange
               - event: PositionChanged(indexed address,indexed address,int256,int256,int256,uint256,uint256,uint256)
                 handler: handlePositionChanged
               - event: PositionLiquidated(indexed address,indexed address,indexed address,int256,int256,int256,uint256,uint256,uint256,uint256,uint256,uint256)
