@@ -1,5 +1,6 @@
 import {
     Deposited as DepositedEvent,
+    ImRatioChanged as ImRatioChangedEvent,
     LiquidityAdded as LiquidityAddedExchangeEvent,
     LiquidityRemoved as LiquidityRemovedExchangeEvent,
     MaxMarketsPerAccountChanged as MaxMarketsPerAccountChangedEvent,
@@ -10,6 +11,7 @@ import {
 } from "../../generated/PerpdexExchange/PerpdexExchange"
 import {
     Deposited,
+    ImRatioChanged,
     LiquidityAddedExchange,
     LiquidityRemovedExchange,
     MaxMarketsPerAccountChanged,
@@ -407,5 +409,20 @@ export function handleMaxMarketsPerAccountChanged(event: MaxMarketsPerAccountCha
     protocol.timestamp = event.block.timestamp
 
     maxMarketsPerAccountChanged.save()
+    protocol.save()
+}
+
+export function handleImRatioChanged(event: ImRatioChangedEvent): void {
+    const imRatioChanged = new ImRatioChanged(`${event.transaction.hash.toHexString()}-${event.logIndex.toString()}`)
+    imRatioChanged.exchange = event.address.toHexString()
+    imRatioChanged.blockNumberLogIndex = getBlockNumberLogIndex(event)
+    imRatioChanged.timestamp = event.block.timestamp
+    imRatioChanged.value = event.params.value
+
+    const protocol = getOrCreateProtocol()
+    protocol.imRatio = imRatioChanged.value
+    protocol.timestamp = event.block.timestamp
+
+    imRatioChanged.save()
     protocol.save()
 }

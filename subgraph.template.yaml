@@ -23,6 +23,7 @@ dataSources:
               - LiquidityRemovedExchange
               - PositionChanged
               - MaxMarketsPerAccountChanged
+              - ImRatioChanged
               - Protocol
               - Market
               - Trader
@@ -52,3 +53,5 @@ dataSources:
                 handler: handlePositionLiquidated
               - event: MaxMarketsPerAccountChanged(uint8)
                 handler: handleMaxMarketsPerAccountChanged
+              - event: ImRatioChanged(uint24)
+                handler: handleImRatioChanged
