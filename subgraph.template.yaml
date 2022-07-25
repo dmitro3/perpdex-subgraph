@@ -18,6 +18,7 @@ dataSources:
           file: ./src/mappings/perpdexExchange.ts
           entities:
               - Deposited
+              - ProtocolFeeTransferred
               - PositionChanged
               - Protocol
               - Market
@@ -34,6 +35,8 @@ dataSources:
                 handler: handleDeposited
               - event: Withdrawn(indexed address,uint256)
                 handler: handleWithdrawn
+              - event: ProtocolFeeTransferred(indexed address,uint256)
+                handler: handleProtocolFeeTransferred
               - event: PositionChanged(indexed address,indexed address,int256,int256,int256,uint256,uint256,uint256)
                 handler: handlePositionChanged
               - event: PositionLiquidated(indexed address,indexed address,indexed address,int256,int256,int256,uint256,uint256,uint256,uint256,uint256,uint256)
