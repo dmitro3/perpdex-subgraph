@@ -4,6 +4,7 @@ import {
     LiquidityAdded as LiquidityAddedExchangeEvent,
     LiquidityRemoved as LiquidityRemovedExchangeEvent,
     MaxMarketsPerAccountChanged as MaxMarketsPerAccountChangedEvent,
+    MmRatioChanged as MmRatioChangedEvent,
     PositionChanged as PositionChangedEvent,
     PositionLiquidated as PositionLiquidatedEvent,
     ProtocolFeeTransferred as ProtocolFeeTransferredEvent,
@@ -15,6 +16,7 @@ import {
     LiquidityAddedExchange,
     LiquidityRemovedExchange,
     MaxMarketsPerAccountChanged,
+    MmRatioChanged,
     PositionChanged,
     ProtocolFeeTransferred,
     Withdrawn,
@@ -424,5 +426,20 @@ export function handleImRatioChanged(event: ImRatioChangedEvent): void {
     protocol.timestamp = event.block.timestamp
 
     imRatioChanged.save()
+    protocol.save()
+}
+
+export function handleMmRatioChanged(event: MmRatioChangedEvent): void {
+    const mmRatioChanged = new MmRatioChanged(`${event.transaction.hash.toHexString()}-${event.logIndex.toString()}`)
+    mmRatioChanged.exchange = event.address.toHexString()
+    mmRatioChanged.blockNumberLogIndex = getBlockNumberLogIndex(event)
+    mmRatioChanged.timestamp = event.block.timestamp
+    mmRatioChanged.value = event.params.value
+
+    const protocol = getOrCreateProtocol()
+    protocol.mmRatio = mmRatioChanged.value
+    protocol.timestamp = event.block.timestamp
+
+    mmRatioChanged.save()
     protocol.save()
 }

@@ -24,6 +24,7 @@ dataSources:
               - PositionChanged
               - MaxMarketsPerAccountChanged
               - ImRatioChanged
+              - MmRatioChanged
               - Protocol
               - Market
               - Trader
@@ -55,3 +56,5 @@ dataSources:
                 handler: handleMaxMarketsPerAccountChanged
               - event: ImRatioChanged(uint24)
                 handler: handleImRatioChanged
+              - event: MmRatioChanged(uint24)
+                handler: handleMmRatioChanged
