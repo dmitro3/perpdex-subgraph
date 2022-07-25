@@ -2,6 +2,7 @@ import {
     Deposited as DepositedEvent,
     LiquidityAdded as LiquidityAddedExchangeEvent,
     LiquidityRemoved as LiquidityRemovedExchangeEvent,
+    MaxMarketsPerAccountChanged as MaxMarketsPerAccountChangedEvent,
     PositionChanged as PositionChangedEvent,
     PositionLiquidated as PositionLiquidatedEvent,
     ProtocolFeeTransferred as ProtocolFeeTransferredEvent,
@@ -11,6 +12,7 @@ import {
     Deposited,
     LiquidityAddedExchange,
     LiquidityRemovedExchange,
+    MaxMarketsPerAccountChanged,
     PositionChanged,
     ProtocolFeeTransferred,
     Withdrawn,
@@ -389,4 +391,21 @@ export function handlePositionLiquidated(event: PositionLiquidatedEvent): void {
     liquidator.save()
     traderTakerInfo.save()
     daySummary.save()
+}
+
+export function handleMaxMarketsPerAccountChanged(event: MaxMarketsPerAccountChangedEvent): void {
+    const maxMarketsPerAccountChanged = new MaxMarketsPerAccountChanged(
+        `${event.transaction.hash.toHexString()}-${event.logIndex.toString()}`,
+    )
+    maxMarketsPerAccountChanged.exchange = event.address.toHexString()
+    maxMarketsPerAccountChanged.blockNumberLogIndex = getBlockNumberLogIndex(event)
+    maxMarketsPerAccountChanged.timestamp = event.block.timestamp
+    maxMarketsPerAccountChanged.value = event.params.value
+
+    const protocol = getOrCreateProtocol()
+    protocol.maxMarketsPerAccount = maxMarketsPerAccountChanged.value
+    protocol.timestamp = event.block.timestamp
+
+    maxMarketsPerAccountChanged.save()
+    protocol.save()
 }

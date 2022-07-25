@@ -22,6 +22,7 @@ dataSources:
               - LiquidityAddedExchange
               - LiquidityRemovedExchange
               - PositionChanged
+              - MaxMarketsPerAccountChanged
               - Protocol
               - Market
               - Trader
@@ -49,3 +50,5 @@ dataSources:
                 handler: handlePositionChanged
               - event: PositionLiquidated(indexed address,indexed address,indexed address,int256,int256,int256,uint256,uint256,uint256,uint256,uint256,uint256)
                 handler: handlePositionLiquidated
+              - event: MaxMarketsPerAccountChanged(uint8)
+                handler: handleMaxMarketsPerAccountChanged
