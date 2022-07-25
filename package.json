@@ -11,6 +11,7 @@
     "generate-manifest:rinkeby": "yarn prepare:rinkeby && mustache configs/rinkeby.json subgraph.template.yaml > subgraph.yaml",
     "generate-constants:rinkeby": "yarn prepare:rinkeby && mustache configs/rinkeby.json src/constants/index.ts.template > src/constants/index.ts",
     "codegen:rinkeby": "yarn generate-manifest:rinkeby && yarn generate-constants:rinkeby && graph codegen",
+    "build": "graph build",
     "deploy-the-graph:rinkeby-test": "yarn codegen:rinkeby && graph deploy --product hosted-service krkzts/perpdex-rinkeby-inverse",
     "health-check": "ts-node ./scripts/healthCheck.ts",
     "prepare": "husky install",
