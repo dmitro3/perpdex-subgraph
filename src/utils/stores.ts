@@ -1,5 +1,15 @@
 import { BigInt, ethereum } from "@graphprotocol/graph-ts"
-import { Candle, DaySummary, Market, PositionHistory, Protocol, Trader, TraderTakerInfo } from "../../generated/schema"
+import {
+    Candle,
+    DaySummary,
+    LiquidityHistory,
+    Market,
+    PositionHistory,
+    Protocol,
+    Trader,
+    TraderMakerInfo,
+    TraderTakerInfo,
+} from "../../generated/schema"
 import { ChainId, Network, Version } from "../constants"
 import { BI_ZERO, d1, h1, m15, m5, MAX_LOG_COUNT, Q96, STR_ZERO } from "./constants"
 
@@ -33,6 +43,21 @@ export function getOrCreateTraderTakerInfo(traderAddr: string, marketAddr: strin
         traderTakerInfo.save()
     }
     return traderTakerInfo
+}
+
+export function getOrCreateTraderMakerInfo(traderAddr: string, marketAddr: string): TraderMakerInfo {
+    let traderMakerInfo = TraderMakerInfo.load(`${traderAddr}-${marketAddr}`)
+    if (!traderMakerInfo) {
+        traderMakerInfo = new TraderMakerInfo(`${traderAddr}-${marketAddr}`)
+        traderMakerInfo.trader = traderAddr
+        traderMakerInfo.market = marketAddr
+        traderMakerInfo.liquidity = BI_ZERO
+        traderMakerInfo.cumBaseSharePerLiquidityX96 = BI_ZERO
+        traderMakerInfo.cumQuotePerLiquidityX96 = BI_ZERO
+        traderMakerInfo.timestamp = BI_ZERO
+        traderMakerInfo.save()
+    }
+    return traderMakerInfo
 }
 
 const protocolId = "perpdex"
@@ -145,6 +170,30 @@ export function createPositionHistory(
     positionHistory.realizedPnl = positionHistory.realizedPnl.plus(realizedPnl)
     positionHistory.protocolFee = protocolFee
     positionHistory.save()
+}
+
+export function createLiquidityHistory(
+    traderAddr: string,
+    marketAddr: string,
+    timestamp: BigInt,
+    base: BigInt,
+    quote: BigInt,
+    liquidity: BigInt,
+): void {
+    let liquidityHistory = LiquidityHistory.load(`${traderAddr}-${marketAddr}-${timestamp}`)
+    if (!liquidityHistory) {
+        liquidityHistory = new LiquidityHistory(`${traderAddr}-${marketAddr}-${timestamp}`)
+        liquidityHistory.trader = traderAddr
+        liquidityHistory.market = marketAddr
+        liquidityHistory.timestamp = timestamp
+        liquidityHistory.base = BI_ZERO
+        liquidityHistory.quote = BI_ZERO
+        liquidityHistory.liquidity = BI_ZERO
+    }
+    liquidityHistory.base = liquidityHistory.base.plus(base)
+    liquidityHistory.quote = liquidityHistory.quote.plus(quote)
+    liquidityHistory.liquidity = liquidityHistory.liquidity.plus(liquidity)
+    liquidityHistory.save()
 }
 
 function doCreateCandle(
