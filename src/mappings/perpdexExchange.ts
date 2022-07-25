@@ -1,6 +1,7 @@
 import {
     Deposited as DepositedEvent,
     ImRatioChanged as ImRatioChangedEvent,
+    LiquidationRewardConfigChanged as LiquidationRewardConfigChangedEvent,
     LiquidityAdded as LiquidityAddedExchangeEvent,
     LiquidityRemoved as LiquidityRemovedExchangeEvent,
     MaxMarketsPerAccountChanged as MaxMarketsPerAccountChangedEvent,
@@ -13,6 +14,7 @@ import {
 import {
     Deposited,
     ImRatioChanged,
+    LiquidationRewardConfigChanged,
     LiquidityAddedExchange,
     LiquidityRemovedExchange,
     MaxMarketsPerAccountChanged,
@@ -441,5 +443,24 @@ export function handleMmRatioChanged(event: MmRatioChangedEvent): void {
     protocol.timestamp = event.block.timestamp
 
     mmRatioChanged.save()
+    protocol.save()
+}
+
+export function handleLiquidationRewardConfigChanged(event: LiquidationRewardConfigChangedEvent): void {
+    const liquidationRewardConfigChanged = new LiquidationRewardConfigChanged(
+        `${event.transaction.hash.toHexString()}-${event.logIndex.toString()}`,
+    )
+    liquidationRewardConfigChanged.exchange = event.address.toHexString()
+    liquidationRewardConfigChanged.blockNumberLogIndex = getBlockNumberLogIndex(event)
+    liquidationRewardConfigChanged.timestamp = event.block.timestamp
+    liquidationRewardConfigChanged.rewardRatio = event.params.rewardRatio
+    liquidationRewardConfigChanged.smoothEmaTime = event.params.smoothEmaTime
+
+    const protocol = getOrCreateProtocol()
+    protocol.rewardRatio = liquidationRewardConfigChanged.rewardRatio
+    protocol.smoothEmaTime = liquidationRewardConfigChanged.smoothEmaTime
+    protocol.timestamp = event.block.timestamp
+
+    liquidationRewardConfigChanged.save()
     protocol.save()
 }

@@ -25,6 +25,7 @@ dataSources:
               - MaxMarketsPerAccountChanged
               - ImRatioChanged
               - MmRatioChanged
+              - LiquidationRewardConfigChanged
               - Protocol
               - Market
               - Trader
@@ -58,3 +59,6 @@ dataSources:
                 handler: handleImRatioChanged
               - event: MmRatioChanged(uint24)
                 handler: handleMmRatioChanged
+              - event:  LiquidationRewardConfigChanged(uint24,uint16)
+                handler: handleLiquidationRewardConfigChanged
+
