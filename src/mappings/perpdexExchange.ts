@@ -1,6 +1,7 @@
 import {
     Deposited as DepositedEvent,
     ImRatioChanged as ImRatioChangedEvent,
+    IsMarketAllowedChanged as IsMarketAllowedChangedEvent,
     LiquidationRewardConfigChanged as LiquidationRewardConfigChangedEvent,
     LiquidityAdded as LiquidityAddedExchangeEvent,
     LiquidityRemoved as LiquidityRemovedExchangeEvent,
@@ -15,6 +16,7 @@ import {
 import {
     Deposited,
     ImRatioChanged,
+    IsMarketAllowedChanged,
     LiquidationRewardConfigChanged,
     LiquidityAddedExchange,
     LiquidityRemovedExchange,
@@ -482,4 +484,23 @@ export function handleProtocolFeeRatioChanged(event: ProtocolFeeRatioChangedEven
 
     protocolFeeRatioChanged.save()
     protocol.save()
+}
+
+export function handleIsMarketAllowedChanged(event: IsMarketAllowedChangedEvent): void {
+    const isMarketAllowedChanged = new IsMarketAllowedChanged(
+        `${event.transaction.hash.toHexString()}-${event.logIndex.toString()}`,
+    )
+    isMarketAllowedChanged.exchange = event.address.toHexString()
+    isMarketAllowedChanged.blockNumberLogIndex = getBlockNumberLogIndex(event)
+    isMarketAllowedChanged.timestamp = event.block.timestamp
+    isMarketAllowedChanged.market = event.params.market.toHexString()
+    isMarketAllowedChanged.isMarketAllowed = event.params.isMarketAllowed
+
+    const market = getOrCreateMarket(isMarketAllowedChanged.market)
+    market.timestamp = event.block.timestamp
+
+    // (To do) create market datasource
+
+    isMarketAllowedChanged.save()
+    market.save()
 }
