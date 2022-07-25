@@ -1,17 +1,29 @@
 import {
     Deposited as DepositedEvent,
+    ImRatioChanged as ImRatioChangedEvent,
+    IsMarketAllowedChanged as IsMarketAllowedChangedEvent,
+    LiquidationRewardConfigChanged as LiquidationRewardConfigChangedEvent,
     LiquidityAdded as LiquidityAddedExchangeEvent,
     LiquidityRemoved as LiquidityRemovedExchangeEvent,
+    MaxMarketsPerAccountChanged as MaxMarketsPerAccountChangedEvent,
+    MmRatioChanged as MmRatioChangedEvent,
     PositionChanged as PositionChangedEvent,
     PositionLiquidated as PositionLiquidatedEvent,
+    ProtocolFeeRatioChanged as ProtocolFeeRatioChangedEvent,
     ProtocolFeeTransferred as ProtocolFeeTransferredEvent,
     Withdrawn as WithdrawnEvent,
 } from "../../generated/PerpdexExchange/PerpdexExchange"
 import {
     Deposited,
+    ImRatioChanged,
+    IsMarketAllowedChanged,
+    LiquidationRewardConfigChanged,
     LiquidityAddedExchange,
     LiquidityRemovedExchange,
+    MaxMarketsPerAccountChanged,
+    MmRatioChanged,
     PositionChanged,
+    ProtocolFeeRatioChanged,
     ProtocolFeeTransferred,
     Withdrawn,
 } from "../../generated/schema"
@@ -389,4 +401,106 @@ export function handlePositionLiquidated(event: PositionLiquidatedEvent): void {
     liquidator.save()
     traderTakerInfo.save()
     daySummary.save()
+}
+
+export function handleMaxMarketsPerAccountChanged(event: MaxMarketsPerAccountChangedEvent): void {
+    const maxMarketsPerAccountChanged = new MaxMarketsPerAccountChanged(
+        `${event.transaction.hash.toHexString()}-${event.logIndex.toString()}`,
+    )
+    maxMarketsPerAccountChanged.exchange = event.address.toHexString()
+    maxMarketsPerAccountChanged.blockNumberLogIndex = getBlockNumberLogIndex(event)
+    maxMarketsPerAccountChanged.timestamp = event.block.timestamp
+    maxMarketsPerAccountChanged.value = event.params.value
+
+    const protocol = getOrCreateProtocol()
+    protocol.maxMarketsPerAccount = maxMarketsPerAccountChanged.value
+    protocol.timestamp = event.block.timestamp
+
+    maxMarketsPerAccountChanged.save()
+    protocol.save()
+}
+
+export function handleImRatioChanged(event: ImRatioChangedEvent): void {
+    const imRatioChanged = new ImRatioChanged(`${event.transaction.hash.toHexString()}-${event.logIndex.toString()}`)
+    imRatioChanged.exchange = event.address.toHexString()
+    imRatioChanged.blockNumberLogIndex = getBlockNumberLogIndex(event)
+    imRatioChanged.timestamp = event.block.timestamp
+    imRatioChanged.value = event.params.value
+
+    const protocol = getOrCreateProtocol()
+    protocol.imRatio = imRatioChanged.value
+    protocol.timestamp = event.block.timestamp
+
+    imRatioChanged.save()
+    protocol.save()
+}
+
+export function handleMmRatioChanged(event: MmRatioChangedEvent): void {
+    const mmRatioChanged = new MmRatioChanged(`${event.transaction.hash.toHexString()}-${event.logIndex.toString()}`)
+    mmRatioChanged.exchange = event.address.toHexString()
+    mmRatioChanged.blockNumberLogIndex = getBlockNumberLogIndex(event)
+    mmRatioChanged.timestamp = event.block.timestamp
+    mmRatioChanged.value = event.params.value
+
+    const protocol = getOrCreateProtocol()
+    protocol.mmRatio = mmRatioChanged.value
+    protocol.timestamp = event.block.timestamp
+
+    mmRatioChanged.save()
+    protocol.save()
+}
+
+export function handleLiquidationRewardConfigChanged(event: LiquidationRewardConfigChangedEvent): void {
+    const liquidationRewardConfigChanged = new LiquidationRewardConfigChanged(
+        `${event.transaction.hash.toHexString()}-${event.logIndex.toString()}`,
+    )
+    liquidationRewardConfigChanged.exchange = event.address.toHexString()
+    liquidationRewardConfigChanged.blockNumberLogIndex = getBlockNumberLogIndex(event)
+    liquidationRewardConfigChanged.timestamp = event.block.timestamp
+    liquidationRewardConfigChanged.rewardRatio = event.params.rewardRatio
+    liquidationRewardConfigChanged.smoothEmaTime = event.params.smoothEmaTime
+
+    const protocol = getOrCreateProtocol()
+    protocol.rewardRatio = liquidationRewardConfigChanged.rewardRatio
+    protocol.smoothEmaTime = liquidationRewardConfigChanged.smoothEmaTime
+    protocol.timestamp = event.block.timestamp
+
+    liquidationRewardConfigChanged.save()
+    protocol.save()
+}
+
+export function handleProtocolFeeRatioChanged(event: ProtocolFeeRatioChangedEvent): void {
+    const protocolFeeRatioChanged = new ProtocolFeeRatioChanged(
+        `${event.transaction.hash.toHexString()}-${event.logIndex.toString()}`,
+    )
+    protocolFeeRatioChanged.exchange = event.address.toHexString()
+    protocolFeeRatioChanged.blockNumberLogIndex = getBlockNumberLogIndex(event)
+    protocolFeeRatioChanged.timestamp = event.block.timestamp
+    protocolFeeRatioChanged.value = event.params.value
+
+    const protocol = getOrCreateProtocol()
+    protocol.protocolFeeRatio = protocolFeeRatioChanged.value
+    protocol.timestamp = event.block.timestamp
+
+    protocolFeeRatioChanged.save()
+    protocol.save()
+}
+
+export function handleIsMarketAllowedChanged(event: IsMarketAllowedChangedEvent): void {
+    const isMarketAllowedChanged = new IsMarketAllowedChanged(
+        `${event.transaction.hash.toHexString()}-${event.logIndex.toString()}`,
+    )
+    isMarketAllowedChanged.exchange = event.address.toHexString()
+    isMarketAllowedChanged.blockNumberLogIndex = getBlockNumberLogIndex(event)
+    isMarketAllowedChanged.timestamp = event.block.timestamp
+    isMarketAllowedChanged.market = event.params.market.toHexString()
+    isMarketAllowedChanged.isMarketAllowed = event.params.isMarketAllowed
+
+    const market = getOrCreateMarket(isMarketAllowedChanged.market)
+    market.timestamp = event.block.timestamp
+
+    // (To do) create market datasource
+
+    isMarketAllowedChanged.save()
+    market.save()
 }
