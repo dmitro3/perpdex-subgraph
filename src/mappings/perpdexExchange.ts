@@ -2,8 +2,9 @@ import {
     Deposited as DepositedEvent,
     PositionChanged as PositionChangedEvent,
     PositionLiquidated as PositionLiquidatedEvent,
+    Withdrawn as WithdrawnEvent,
 } from "../../generated/PerpdexExchange/PerpdexExchange"
-import { Deposited, PositionChanged } from "../../generated/schema"
+import { Deposited, PositionChanged, Withdrawn } from "../../generated/schema"
 import { BI_ZERO, Q96 } from "../utils/constants"
 import { pushMarket } from "../utils/model"
 import {
@@ -33,6 +34,26 @@ export function handleDeposited(event: DepositedEvent): void {
     protocol.timestamp = event.block.timestamp
 
     deposited.save()
+    trader.save()
+    protocol.save()
+}
+
+export function handleWithdrawn(event: WithdrawnEvent): void {
+    const withdrawn = new Withdrawn(`${event.transaction.hash.toHexString()}-${event.logIndex.toString()}`)
+    withdrawn.exchange = event.address.toHexString()
+    withdrawn.blockNumberLogIndex = getBlockNumberLogIndex(event)
+    withdrawn.timestamp = event.block.timestamp
+    withdrawn.trader = event.params.trader.toHexString()
+    withdrawn.amount = event.params.amount
+
+    const trader = getOrCreateTrader(event.params.trader.toHexString())
+    trader.collateralBalance = trader.collateralBalance.minus(withdrawn.amount)
+    trader.timestamp = event.block.timestamp
+
+    const protocol = getOrCreateProtocol()
+    protocol.timestamp = event.block.timestamp
+
+    withdrawn.save()
     trader.save()
     protocol.save()
 }

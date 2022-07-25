@@ -32,6 +32,8 @@ dataSources:
           eventHandlers:
               - event: Deposited(indexed address,uint256)
                 handler: handleDeposited
+              - event: Withdrawn(indexed address,uint256)
+                handler: handleWithdrawn
               - event: PositionChanged(indexed address,indexed address,int256,int256,int256,uint256,uint256,uint256)
                 handler: handlePositionChanged
               - event: PositionLiquidated(indexed address,indexed address,indexed address,int256,int256,int256,uint256,uint256,uint256,uint256,uint256,uint256)
