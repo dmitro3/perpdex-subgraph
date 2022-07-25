@@ -34,3 +34,5 @@ dataSources:
                 handler: handleDeposited
               - event: PositionChanged(indexed address,indexed address,int256,int256,int256,uint256,uint256,uint256)
                 handler: handlePositionChanged
+              - event: PositionLiquidated(indexed address,indexed address,indexed address,int256,int256,int256,uint256,uint256,uint256,uint256,uint256,uint256)
+                handler: handlePositionLiquidated
