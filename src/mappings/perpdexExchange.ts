@@ -2,9 +2,10 @@ import {
     Deposited as DepositedEvent,
     PositionChanged as PositionChangedEvent,
     PositionLiquidated as PositionLiquidatedEvent,
+    ProtocolFeeTransferred as ProtocolFeeTransferredEvent,
     Withdrawn as WithdrawnEvent,
 } from "../../generated/PerpdexExchange/PerpdexExchange"
-import { Deposited, PositionChanged, Withdrawn } from "../../generated/schema"
+import { Deposited, PositionChanged, ProtocolFeeTransferred, Withdrawn } from "../../generated/schema"
 import { BI_ZERO, Q96 } from "../utils/constants"
 import { pushMarket } from "../utils/model"
 import {
@@ -54,6 +55,29 @@ export function handleWithdrawn(event: WithdrawnEvent): void {
     protocol.timestamp = event.block.timestamp
 
     withdrawn.save()
+    trader.save()
+    protocol.save()
+}
+
+export function handleProtocolFeeTransferred(event: ProtocolFeeTransferredEvent): void {
+    const protocolFeeTransferred = new ProtocolFeeTransferred(
+        `${event.transaction.hash.toHexString()}-${event.logIndex.toString()}`,
+    )
+    protocolFeeTransferred.exchange = event.address.toHexString()
+    protocolFeeTransferred.blockNumberLogIndex = getBlockNumberLogIndex(event)
+    protocolFeeTransferred.timestamp = event.block.timestamp
+    protocolFeeTransferred.trader = event.params.trader.toHexString()
+    protocolFeeTransferred.amount = event.params.amount
+
+    const trader = getOrCreateTrader(event.params.trader.toHexString())
+    trader.collateralBalance = trader.collateralBalance.plus(protocolFeeTransferred.amount)
+    trader.timestamp = event.block.timestamp
+
+    const protocol = getOrCreateProtocol()
+    protocol.protocolFee = protocol.protocolFee.minus(protocolFeeTransferred.amount)
+    protocol.timestamp = event.block.timestamp
+
+    protocolFeeTransferred.save()
     trader.save()
     protocol.save()
 }
