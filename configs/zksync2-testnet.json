@@ -1,0 +1,12 @@
+{
+  "chainId": 280,
+  "contracts": {
+    "PerpdexExchange": {
+      "address": "0x6d0c6496b82d038307C85073eF67317507e24118",
+      "createdBlockNumber": 446459,
+      "name": "contracts/PerpdexExchange.sol:PerpdexExchange"
+    }
+  },
+  "network": "zkSync2-testnet",
+  "version": "v1"
+}
