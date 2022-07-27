@@ -187,7 +187,7 @@ type FundingPaid @entity {
 
     market: String!
     fundingRateX96: BigInt!
-    elapsedSec: Int!
+    elapsedSec: BigInt!
     premiumX96: BigInt!
     markPriceX96: BigInt!
     cumBasePerLiquidityX96: BigInt!
