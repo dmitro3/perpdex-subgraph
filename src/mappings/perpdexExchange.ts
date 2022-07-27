@@ -27,6 +27,7 @@ import {
     ProtocolFeeTransferred,
     Withdrawn,
 } from "../../generated/schema"
+import { PerpdexMarket } from "../../generated/templates"
 import { BI_ZERO, Q96 } from "../utils/constants"
 import { pushMarket } from "../utils/model"
 import {
@@ -499,7 +500,7 @@ export function handleIsMarketAllowedChanged(event: IsMarketAllowedChangedEvent)
     const market = getOrCreateMarket(isMarketAllowedChanged.market)
     market.timestamp = event.block.timestamp
 
-    // (To do) create market datasource
+    PerpdexMarket.create(event.params.market)
 
     isMarketAllowedChanged.save()
     market.save()

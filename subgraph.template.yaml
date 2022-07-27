@@ -67,4 +67,32 @@ dataSources:
                 handler: handleProtocolFeeRatioChanged
               - event: IsMarketAllowedChanged(indexed address,bool)
                 handler: handleIsMarketAllowedChanged
-
+templates:
+    - kind: ethereum/contract
+      name: PerpdexMarket
+      network: {{ network }}
+      source:
+        abi: PerpdexMarket
+      mapping:
+        kind: ethereum/events
+        apiVersion: 0.0.5
+        language: wasm/assemblyscript
+        file: ./src/mappings/perpdexMarket.ts
+        entities:
+          - FundingPaid
+          - LiquidityAdded
+          - LiquidityRemoved
+          - Swapped
+          - PoolFeeRatioChanged
+          - FundingMaxPremiumRatioChanged
+          - FundingMaxElapsedSecChanged
+          - FundingRolloverSecChanged
+          - PriceLimitConfigChanged
+          - Protocol
+          - Market
+        abis:
+          - name: PerpdexMarket
+            file: ./abis/PerpdexMarket.abi.json
+        eventHandlers:
+          - event: FundingPaid(int256,uint32,int256,uint256,uint256,uint256)
+            handler: handleFundingPaid
