@@ -1,8 +1,9 @@
 import { BigInt } from "@graphprotocol/graph-ts"
-import { FundingPaid, LiquidityAddedMarket } from "../../generated/schema"
+import { FundingPaid, LiquidityAddedMarket, LiquidityRemovedMarket } from "../../generated/schema"
 import {
     FundingPaid as FundingPaidEvent,
     LiquidityAdded as LiquidityAddedEvent,
+    LiquidityRemoved as LiquidityRemovedEvent,
 } from "../../generated/templates/PerpdexMarket/PerpdexMarket"
 import { BI_ZERO, Q96 } from "../utils/constants"
 import { getBlockNumberLogIndex, getOrCreateMarket, getOrCreateProtocol } from "../utils/stores"
@@ -66,6 +67,33 @@ export function handleLiquidityAdded(event: LiquidityAddedEvent): void {
     market.timestamp = event.block.timestamp
 
     liquidityAdded.save()
+    protocol.save()
+    market.save()
+}
+
+export function handleLiquidityRemoved(event: LiquidityRemovedEvent): void {
+    const liquidityRemoved = new LiquidityRemovedMarket(
+        `${event.transaction.hash.toHexString()}-${event.logIndex.toString()}`,
+    )
+    liquidityRemoved.blockNumberLogIndex = getBlockNumberLogIndex(event)
+    liquidityRemoved.timestamp = event.block.timestamp
+    liquidityRemoved.base = event.params.base
+    liquidityRemoved.quote = event.params.quote
+    liquidityRemoved.liquidity = event.params.liquidity
+
+    const protocol = getOrCreateProtocol()
+    protocol.makerVolume = protocol.makerVolume.plus(liquidityRemoved.liquidity)
+    protocol.timestamp = event.block.timestamp
+
+    const market = getOrCreateMarket(event.address.toHexString())
+    market.baseAmount = market.baseAmount.minus(liquidityRemoved.base)
+    market.quoteAmount = market.quoteAmount.minus(liquidityRemoved.quote)
+    market.liquidity = market.liquidity.minus(liquidityRemoved.liquidity)
+    market.makerVolume = market.makerVolume.plus(liquidityRemoved.liquidity)
+    market.timestampAdded = event.block.timestamp
+    market.timestamp = event.block.timestamp
+
+    liquidityRemoved.save()
     protocol.save()
     market.save()
 }

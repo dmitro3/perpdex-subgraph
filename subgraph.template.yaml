@@ -98,3 +98,5 @@ templates:
             handler: handleFundingPaid
           - event: LiquidityAdded(uint256,uint256,uint256)
             handler: handleLiquidityAdded
+          - event: LiquidityRemoved(uint256,uint256,uint256)
+            handler: handleLiquidityRemoved
