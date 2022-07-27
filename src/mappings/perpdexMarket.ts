@@ -11,7 +11,6 @@ export function handleFundingPaid(event: FundingPaidEvent): void {
     const fundingPaid = new FundingPaid(`${event.transaction.hash.toHexString()}-${event.logIndex.toString()}`)
     fundingPaid.blockNumberLogIndex = getBlockNumberLogIndex(event)
     fundingPaid.timestamp = event.block.timestamp
-    fundingPaid.market = event.address.toHexString()
     fundingPaid.fundingRateX96 = event.params.fundingRateX96
     fundingPaid.elapsedSec = event.params.elapsedSec
     fundingPaid.premiumX96 = event.params.premiumX96
@@ -19,7 +18,7 @@ export function handleFundingPaid(event: FundingPaidEvent): void {
     fundingPaid.cumBasePerLiquidityX96 = event.params.cumBasePerLiquidityX96
     fundingPaid.cumQuotePerLiquidityX96 = event.params.cumQuotePerLiquidityX96
 
-    const market = getOrCreateMarket(fundingPaid.market)
+    const market = getOrCreateMarket(event.address.toHexString())
     market.baseBalancePerShareX96 = market.baseBalancePerShareX96.times(Q96.minus(fundingPaid.fundingRateX96)).div(Q96)
     if (fundingPaid.fundingRateX96.gt(BigInt.fromI32(0))) {
         const deleveratedQuote = market.quoteAmount.times(fundingPaid.fundingRateX96).div(Q96)
@@ -50,7 +49,6 @@ export function handleLiquidityAdded(event: LiquidityAddedEvent): void {
     )
     liquidityAdded.blockNumberLogIndex = getBlockNumberLogIndex(event)
     liquidityAdded.timestamp = event.block.timestamp
-    liquidityAdded.market = event.address.toHexString()
     liquidityAdded.base = event.params.base
     liquidityAdded.quote = event.params.quote
     liquidityAdded.liquidity = event.params.liquidity
@@ -59,7 +57,7 @@ export function handleLiquidityAdded(event: LiquidityAddedEvent): void {
     protocol.makerVolume = protocol.makerVolume.plus(liquidityAdded.liquidity)
     protocol.timestamp = event.block.timestamp
 
-    const market = getOrCreateMarket(liquidityAdded.market)
+    const market = getOrCreateMarket(event.address.toHexString())
     market.baseAmount = market.baseAmount.plus(liquidityAdded.base)
     market.quoteAmount = market.quoteAmount.plus(liquidityAdded.quote)
     market.liquidity = market.liquidity.plus(liquidityAdded.liquidity)
