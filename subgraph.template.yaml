@@ -100,3 +100,5 @@ templates:
             handler: handleLiquidityAdded
           - event: LiquidityRemoved(uint256,uint256,uint256)
             handler: handleLiquidityRemoved
+          - event: Swapped(bool,bool,uint256,uint256)
+            handler: handleSwapped
