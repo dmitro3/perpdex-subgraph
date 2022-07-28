@@ -102,3 +102,13 @@ templates:
             handler: handleLiquidityRemoved
           - event: Swapped(bool,bool,uint256,uint256)
             handler: handleSwapped
+          - event: PoolFeeRatioChanged(uint24)
+            handler: handlePoolFeeRatioChanged
+          - event: FundingMaxPremiumRatioChanged(uint24)
+            handler: handleFundingMaxPremiumRatioChanged
+          - event: FundingMaxElapsedSecChanged(uint32)
+            handler: handleFundingMaxElapsedSecChanged
+          - event: FundingRolloverSecChanged(uint32)
+            handler: handleFundingRolloverSecChanged
+          - event: PriceLimitConfigChanged(uint24,uint24,uint24,uint24,uint32)
+            handler: handlePriceLimitConfigChanged
