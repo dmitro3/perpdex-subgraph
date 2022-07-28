@@ -1,9 +1,10 @@
 import { BigInt } from "@graphprotocol/graph-ts"
-import { FundingPaid, LiquidityAddedMarket, LiquidityRemovedMarket } from "../../generated/schema"
+import { FundingPaid, LiquidityAddedMarket, LiquidityRemovedMarket, Swapped } from "../../generated/schema"
 import {
     FundingPaid as FundingPaidEvent,
     LiquidityAdded as LiquidityAddedEvent,
     LiquidityRemoved as LiquidityRemovedEvent,
+    Swapped as SwappedEvent,
 } from "../../generated/templates/PerpdexMarket/PerpdexMarket"
 import { BI_ZERO, Q96 } from "../utils/constants"
 import { getBlockNumberLogIndex, getOrCreateMarket, getOrCreateProtocol } from "../utils/stores"
@@ -94,6 +95,45 @@ export function handleLiquidityRemoved(event: LiquidityRemovedEvent): void {
     market.timestamp = event.block.timestamp
 
     liquidityRemoved.save()
+    protocol.save()
+    market.save()
+}
+
+export function handleSwapped(event: SwappedEvent): void {
+    const swapped = new Swapped(`${event.transaction.hash.toHexString()}-${event.logIndex.toString()}`)
+    swapped.blockNumberLogIndex = getBlockNumberLogIndex(event)
+    swapped.timestamp = event.block.timestamp
+    swapped.isBaseToQuote = event.params.isBaseToQuote
+    swapped.isExactInput = event.params.isExactInput
+    swapped.amount = event.params.amount
+    swapped.oppositeAmount = event.params.oppositeAmount
+
+    const protocol = getOrCreateProtocol()
+    protocol.takerVolume = protocol.takerVolume.plus(swapped.amount)
+    protocol.timestamp = event.block.timestamp
+
+    const market = getOrCreateMarket(event.address.toHexString())
+    if (swapped.isExactInput) {
+        if (swapped.isBaseToQuote) {
+            market.baseAmount = market.baseAmount.plus(swapped.amount)
+            market.quoteAmount = market.quoteAmount.minus(swapped.oppositeAmount)
+        } else {
+            market.baseAmount = market.baseAmount.minus(swapped.oppositeAmount)
+            market.quoteAmount = market.quoteAmount.plus(swapped.amount)
+        }
+    } else {
+        if (swapped.isBaseToQuote) {
+            market.baseAmount = market.baseAmount.plus(swapped.oppositeAmount)
+            market.quoteAmount = market.quoteAmount.minus(swapped.amount)
+        } else {
+            market.baseAmount = market.baseAmount.minus(swapped.amount)
+            market.quoteAmount = market.quoteAmount.plus(swapped.oppositeAmount)
+        }
+    }
+    market.takerVolume = market.takerVolume.plus(swapped.amount)
+    market.timestamp = event.block.timestamp
+
+    swapped.save()
     protocol.save()
     market.save()
 }
