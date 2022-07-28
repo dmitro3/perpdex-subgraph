@@ -1,9 +1,24 @@
 import { BigInt } from "@graphprotocol/graph-ts"
-import { FundingPaid, LiquidityAddedMarket, LiquidityRemovedMarket, Swapped } from "../../generated/schema"
 import {
+    FundingMaxElapsedSecChanged,
+    FundingMaxPremiumRatioChanged,
+    FundingPaid,
+    FundingRolloverSecChanged,
+    LiquidityAddedMarket,
+    LiquidityRemovedMarket,
+    PoolFeeRatioChanged,
+    PriceLimitConfigChanged,
+    Swapped,
+} from "../../generated/schema"
+import {
+    FundingMaxElapsedSecChanged as FundingMaxElapsedSecChangedEvent,
+    FundingMaxPremiumRatioChanged as FundingMaxPremiumRatioChangedEvent,
     FundingPaid as FundingPaidEvent,
+    FundingRolloverSecChanged as FundingRolloverSecChangedEvent,
     LiquidityAdded as LiquidityAddedEvent,
     LiquidityRemoved as LiquidityRemovedEvent,
+    PoolFeeRatioChanged as PoolFeeRatioChangedEvent,
+    PriceLimitConfigChanged as PriceLimitConfigChangedEvent,
     Swapped as SwappedEvent,
 } from "../../generated/templates/PerpdexMarket/PerpdexMarket"
 import { BI_ZERO, Q96 } from "../utils/constants"
@@ -135,5 +150,93 @@ export function handleSwapped(event: SwappedEvent): void {
 
     swapped.save()
     protocol.save()
+    market.save()
+}
+
+export function handlePoolFeeRatioChanged(event: PoolFeeRatioChangedEvent): void {
+    const poolFeeRatioChanged = new PoolFeeRatioChanged(
+        `${event.transaction.hash.toHexString()}-${event.logIndex.toString()}`,
+    )
+    poolFeeRatioChanged.blockNumberLogIndex = getBlockNumberLogIndex(event)
+    poolFeeRatioChanged.timestamp = event.block.timestamp
+    poolFeeRatioChanged.value = event.params.value
+
+    const market = getOrCreateMarket(event.address.toHexString())
+    market.poolFeeRatio = poolFeeRatioChanged.value
+    market.timestamp = event.block.timestamp
+
+    poolFeeRatioChanged.save()
+    market.save()
+}
+
+export function handleFundingMaxPremiumRatioChanged(event: FundingMaxPremiumRatioChangedEvent): void {
+    const fundingMaxPremiumRatioChanged = new FundingMaxPremiumRatioChanged(
+        `${event.transaction.hash.toHexString()}-${event.logIndex.toString()}`,
+    )
+    fundingMaxPremiumRatioChanged.blockNumberLogIndex = getBlockNumberLogIndex(event)
+    fundingMaxPremiumRatioChanged.timestamp = event.block.timestamp
+    fundingMaxPremiumRatioChanged.value = event.params.value
+
+    const market = getOrCreateMarket(event.address.toHexString())
+    market.maxPremiumRatio = fundingMaxPremiumRatioChanged.value
+    market.timestamp = event.block.timestamp
+
+    fundingMaxPremiumRatioChanged.save()
+    market.save()
+}
+
+export function handleFundingMaxElapsedSecChanged(event: FundingMaxElapsedSecChangedEvent): void {
+    const fundingMaxElapsedSecChanged = new FundingMaxElapsedSecChanged(
+        `${event.transaction.hash.toHexString()}-${event.logIndex.toString()}`,
+    )
+    fundingMaxElapsedSecChanged.blockNumberLogIndex = getBlockNumberLogIndex(event)
+    fundingMaxElapsedSecChanged.timestamp = event.block.timestamp
+    fundingMaxElapsedSecChanged.value = event.params.value
+
+    const market = getOrCreateMarket(event.address.toHexString())
+    market.fundingMaxElapsedSec = fundingMaxElapsedSecChanged.value
+    market.timestamp = event.block.timestamp
+
+    fundingMaxElapsedSecChanged.save()
+    market.save()
+}
+
+export function handleFundingRolloverSecChanged(event: FundingRolloverSecChangedEvent): void {
+    const fundingRolloverSecChanged = new FundingRolloverSecChanged(
+        `${event.transaction.hash.toHexString()}-${event.logIndex.toString()}`,
+    )
+    fundingRolloverSecChanged.blockNumberLogIndex = getBlockNumberLogIndex(event)
+    fundingRolloverSecChanged.timestamp = event.block.timestamp
+    fundingRolloverSecChanged.value = event.params.value
+
+    const market = getOrCreateMarket(event.address.toHexString())
+    market.fundingRolloverSec = fundingRolloverSecChanged.value
+    market.timestamp = event.block.timestamp
+
+    fundingRolloverSecChanged.save()
+    market.save()
+}
+
+export function handlePriceLimitConfigChanged(event: PriceLimitConfigChangedEvent): void {
+    const priceLimitConfigChanged = new PriceLimitConfigChanged(
+        `${event.transaction.hash.toHexString()}-${event.logIndex.toString()}`,
+    )
+    priceLimitConfigChanged.blockNumberLogIndex = getBlockNumberLogIndex(event)
+    priceLimitConfigChanged.timestamp = event.block.timestamp
+    priceLimitConfigChanged.normalOrderRatio = event.params.normalOrderRatio
+    priceLimitConfigChanged.liquidationRatio = event.params.liquidationRatio
+    priceLimitConfigChanged.emaNormalOrderRatio = event.params.emaNormalOrderRatio
+    priceLimitConfigChanged.emaLiquidationRatio = event.params.emaLiquidationRatio
+    priceLimitConfigChanged.emaSec = event.params.emaSec
+
+    const market = getOrCreateMarket(event.address.toHexString())
+    market.normalOrderRatio = priceLimitConfigChanged.normalOrderRatio
+    market.liquidationRatio = priceLimitConfigChanged.liquidationRatio
+    market.emaNormalOrderRatio = priceLimitConfigChanged.emaNormalOrderRatio
+    market.emaLiquidationRatio = priceLimitConfigChanged.emaLiquidationRatio
+    market.emaSec = priceLimitConfigChanged.emaSec
+    market.timestamp = event.block.timestamp
+
+    priceLimitConfigChanged.save()
     market.save()
 }

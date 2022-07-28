@@ -263,7 +263,7 @@ type FundingMaxElapsedSecChanged @entity {
     "format: <tx hash>-<log index>"
     id: ID!
 
-    value: Int!
+    value: BigInt!
 
     "(block number * MAX_LOG_COUNT + log index) for sorting"
     blockNumberLogIndex: BigInt!
@@ -274,7 +274,7 @@ type FundingRolloverSecChanged @entity {
     "format: <tx hash>-<log index>"
     id: ID!
 
-    value: Int!
+    value: BigInt!
 
     "(block number * MAX_LOG_COUNT + log index) for sorting"
     blockNumberLogIndex: BigInt!
@@ -289,7 +289,7 @@ type PriceLimitConfigChanged @entity {
     liquidationRatio: Int!
     emaNormalOrderRatio: Int!
     emaLiquidationRatio: Int!
-    emaSec: Int!
+    emaSec: BigInt!
 
     "(block number * MAX_LOG_COUNT + log index) for sorting"
     blockNumberLogIndex: BigInt!
@@ -341,13 +341,13 @@ type Market @entity {
     cumQuotePerLiquidityX96: BigInt!
     poolFeeRatio: Int!
     maxPremiumRatio: Int!
-    fundingMaxElapsedSec: Int!
-    fundingRolloverSec: Int!
+    fundingMaxElapsedSec: BigInt!
+    fundingRolloverSec: BigInt!
     normalOrderRatio: Int!
     liquidationRatio: Int!
     emaNormalOrderRatio: Int!
     emaLiquidationRatio: Int!
-    emaSec: Int!
+    emaSec: BigInt!
 
     "block timestamp when the pool was added "
     timestampAdded: BigInt!

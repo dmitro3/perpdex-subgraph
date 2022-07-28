@@ -103,13 +103,13 @@ export function getOrCreateMarket(marketAddr: string): Market {
         market.cumQuotePerLiquidityX96 = BI_ZERO
         market.poolFeeRatio = 0
         market.maxPremiumRatio = 0
-        market.fundingMaxElapsedSec = 0
-        market.fundingRolloverSec = 0
+        market.fundingMaxElapsedSec = BI_ZERO
+        market.fundingRolloverSec = BI_ZERO
         market.normalOrderRatio = 0
         market.liquidationRatio = 0
         market.emaNormalOrderRatio = 0
         market.emaLiquidationRatio = 0
-        market.emaSec = 0
+        market.emaSec = BI_ZERO
 
         market.timestampAdded = BI_ZERO
         market.timestamp = BI_ZERO
