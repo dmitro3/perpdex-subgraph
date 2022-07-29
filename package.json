@@ -16,8 +16,8 @@
     "generate-constants:zksync2-testnet": "yarn prepare:zksync2-testnet && mustache configs/zksync2-testnet.json src/constants/index.ts.template > src/constants/index.ts",
     "codegen:zksync2-testnet": "yarn generate-manifest:zksync2-testnet && yarn generate-constants:zksync2-testnet && graph codegen",
     "build": "graph build",
-    "deploy-the-graph:rinkeby-test": "yarn codegen:rinkeby && graph deploy --product hosted-service krkzts/perpdex-rinkeby-inverse",
-    "deploy-the-graph:zksync2-testnet": "yarn codegen:zksync2-testnet && graph deploy --product hosted-service krkzts/zksyncsample",
+    "deploy-the-graph:rinkeby": "yarn codegen:rinkeby && graph deploy --product hosted-service perpdex/perpdex-v1-rinkeby",
+    "deploy-the-graph:zksync2-testnet": "yarn codegen:zksync2-testnet && graph deploy --product hosted-service perpdex/perpdex-v1-zksync2-testnet",
     "health-check": "ts-node ./scripts/healthCheck.ts",
     "prepare": "husky install",
     "lint-fix": "prettier --write src/**/*.ts"
