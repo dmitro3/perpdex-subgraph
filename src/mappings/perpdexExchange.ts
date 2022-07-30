@@ -372,7 +372,9 @@ export function handlePositionLiquidated(event: PositionLiquidatedEvent): void {
     traderTakerInfo.timestamp = event.block.timestamp
 
     const daySummary = getOrCreateDaySummary(event.params.trader.toHexString(), event.block.timestamp)
-    daySummary.realizedPnl = daySummary.realizedPnl.plus(positionLiquidated.realizedPnl)
+    daySummary.realizedPnl = daySummary.realizedPnl
+        .plus(positionLiquidated.realizedPnl)
+        .minus(positionLiquidated.liquidationPenalty!)
     daySummary.timestamp = event.block.timestamp
 
     createPositionHistory(
@@ -382,7 +384,7 @@ export function handlePositionLiquidated(event: PositionLiquidatedEvent): void {
         positionLiquidated.base,
         positionLiquidated.baseBalancePerShareX96,
         positionLiquidated.quote,
-        positionLiquidated.realizedPnl,
+        positionLiquidated.realizedPnl.minus(positionLiquidated.liquidationPenalty!),
         positionLiquidated.protocolFee,
     )
 
