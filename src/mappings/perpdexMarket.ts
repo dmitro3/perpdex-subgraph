@@ -28,6 +28,7 @@ export function handleFundingPaid(event: FundingPaidEvent): void {
     const fundingPaid = new FundingPaid(`${event.transaction.hash.toHexString()}-${event.logIndex.toString()}`)
     fundingPaid.blockNumberLogIndex = getBlockNumberLogIndex(event)
     fundingPaid.timestamp = event.block.timestamp
+    fundingPaid.market = event.address.toHexString()
     fundingPaid.fundingRateX96 = event.params.fundingRateX96
     fundingPaid.elapsedSec = event.params.elapsedSec
     fundingPaid.premiumX96 = event.params.premiumX96
@@ -35,7 +36,7 @@ export function handleFundingPaid(event: FundingPaidEvent): void {
     fundingPaid.cumBasePerLiquidityX96 = event.params.cumBasePerLiquidityX96
     fundingPaid.cumQuotePerLiquidityX96 = event.params.cumQuotePerLiquidityX96
 
-    const market = getOrCreateMarket(event.address.toHexString())
+    const market = getOrCreateMarket(fundingPaid.market)
     market.baseBalancePerShareX96 = market.baseBalancePerShareX96.times(Q96.minus(fundingPaid.fundingRateX96)).div(Q96)
     if (fundingPaid.fundingRateX96.gt(BigInt.fromI32(0))) {
         const deleveratedQuote = market.quoteAmount.times(fundingPaid.fundingRateX96).div(Q96)
@@ -66,6 +67,7 @@ export function handleLiquidityAdded(event: LiquidityAddedEvent): void {
     )
     liquidityAdded.blockNumberLogIndex = getBlockNumberLogIndex(event)
     liquidityAdded.timestamp = event.block.timestamp
+    liquidityAdded.market = event.address.toHexString()
     liquidityAdded.base = event.params.base
     liquidityAdded.quote = event.params.quote
     liquidityAdded.liquidity = event.params.liquidity
@@ -74,7 +76,7 @@ export function handleLiquidityAdded(event: LiquidityAddedEvent): void {
     protocol.makerVolume = protocol.makerVolume.plus(liquidityAdded.liquidity)
     protocol.timestamp = event.block.timestamp
 
-    const market = getOrCreateMarket(event.address.toHexString())
+    const market = getOrCreateMarket(liquidityAdded.market)
     market.baseAmount = market.baseAmount.plus(liquidityAdded.base)
     market.quoteAmount = market.quoteAmount.plus(liquidityAdded.quote)
     market.liquidity = market.liquidity.plus(liquidityAdded.liquidity)
@@ -93,6 +95,7 @@ export function handleLiquidityRemoved(event: LiquidityRemovedEvent): void {
     )
     liquidityRemoved.blockNumberLogIndex = getBlockNumberLogIndex(event)
     liquidityRemoved.timestamp = event.block.timestamp
+    liquidityRemoved.market = event.address.toHexString()
     liquidityRemoved.base = event.params.base
     liquidityRemoved.quote = event.params.quote
     liquidityRemoved.liquidity = event.params.liquidity
@@ -101,7 +104,7 @@ export function handleLiquidityRemoved(event: LiquidityRemovedEvent): void {
     protocol.makerVolume = protocol.makerVolume.plus(liquidityRemoved.liquidity)
     protocol.timestamp = event.block.timestamp
 
-    const market = getOrCreateMarket(event.address.toHexString())
+    const market = getOrCreateMarket(liquidityRemoved.market)
     market.baseAmount = market.baseAmount.minus(liquidityRemoved.base)
     market.quoteAmount = market.quoteAmount.minus(liquidityRemoved.quote)
     market.liquidity = market.liquidity.minus(liquidityRemoved.liquidity)
@@ -118,6 +121,7 @@ export function handleSwapped(event: SwappedEvent): void {
     const swapped = new Swapped(`${event.transaction.hash.toHexString()}-${event.logIndex.toString()}`)
     swapped.blockNumberLogIndex = getBlockNumberLogIndex(event)
     swapped.timestamp = event.block.timestamp
+    swapped.market = event.address.toHexString()
     swapped.isBaseToQuote = event.params.isBaseToQuote
     swapped.isExactInput = event.params.isExactInput
     swapped.amount = event.params.amount
@@ -127,7 +131,7 @@ export function handleSwapped(event: SwappedEvent): void {
     protocol.takerVolume = protocol.takerVolume.plus(swapped.amount)
     protocol.timestamp = event.block.timestamp
 
-    const market = getOrCreateMarket(event.address.toHexString())
+    const market = getOrCreateMarket(swapped.market)
     if (swapped.isExactInput) {
         if (swapped.isBaseToQuote) {
             market.baseAmount = market.baseAmount.plus(swapped.amount)
@@ -159,9 +163,10 @@ export function handlePoolFeeRatioChanged(event: PoolFeeRatioChangedEvent): void
     )
     poolFeeRatioChanged.blockNumberLogIndex = getBlockNumberLogIndex(event)
     poolFeeRatioChanged.timestamp = event.block.timestamp
+    poolFeeRatioChanged.market = event.address.toHexString()
     poolFeeRatioChanged.value = event.params.value
 
-    const market = getOrCreateMarket(event.address.toHexString())
+    const market = getOrCreateMarket(poolFeeRatioChanged.market)
     market.poolFeeRatio = poolFeeRatioChanged.value
     market.timestamp = event.block.timestamp
 
@@ -175,9 +180,10 @@ export function handleFundingMaxPremiumRatioChanged(event: FundingMaxPremiumRati
     )
     fundingMaxPremiumRatioChanged.blockNumberLogIndex = getBlockNumberLogIndex(event)
     fundingMaxPremiumRatioChanged.timestamp = event.block.timestamp
+    fundingMaxPremiumRatioChanged.market = event.address.toHexString()
     fundingMaxPremiumRatioChanged.value = event.params.value
 
-    const market = getOrCreateMarket(event.address.toHexString())
+    const market = getOrCreateMarket(fundingMaxPremiumRatioChanged.market)
     market.maxPremiumRatio = fundingMaxPremiumRatioChanged.value
     market.timestamp = event.block.timestamp
 
@@ -191,9 +197,10 @@ export function handleFundingMaxElapsedSecChanged(event: FundingMaxElapsedSecCha
     )
     fundingMaxElapsedSecChanged.blockNumberLogIndex = getBlockNumberLogIndex(event)
     fundingMaxElapsedSecChanged.timestamp = event.block.timestamp
+    fundingMaxElapsedSecChanged.market = event.address.toHexString()
     fundingMaxElapsedSecChanged.value = event.params.value
 
-    const market = getOrCreateMarket(event.address.toHexString())
+    const market = getOrCreateMarket(fundingMaxElapsedSecChanged.market)
     market.fundingMaxElapsedSec = fundingMaxElapsedSecChanged.value
     market.timestamp = event.block.timestamp
 
@@ -207,9 +214,10 @@ export function handleFundingRolloverSecChanged(event: FundingRolloverSecChanged
     )
     fundingRolloverSecChanged.blockNumberLogIndex = getBlockNumberLogIndex(event)
     fundingRolloverSecChanged.timestamp = event.block.timestamp
+    fundingRolloverSecChanged.market = event.address.toHexString()
     fundingRolloverSecChanged.value = event.params.value
 
-    const market = getOrCreateMarket(event.address.toHexString())
+    const market = getOrCreateMarket(fundingRolloverSecChanged.market)
     market.fundingRolloverSec = fundingRolloverSecChanged.value
     market.timestamp = event.block.timestamp
 
@@ -223,13 +231,14 @@ export function handlePriceLimitConfigChanged(event: PriceLimitConfigChangedEven
     )
     priceLimitConfigChanged.blockNumberLogIndex = getBlockNumberLogIndex(event)
     priceLimitConfigChanged.timestamp = event.block.timestamp
+    priceLimitConfigChanged.market = event.address.toHexString()
     priceLimitConfigChanged.normalOrderRatio = event.params.normalOrderRatio
     priceLimitConfigChanged.liquidationRatio = event.params.liquidationRatio
     priceLimitConfigChanged.emaNormalOrderRatio = event.params.emaNormalOrderRatio
     priceLimitConfigChanged.emaLiquidationRatio = event.params.emaLiquidationRatio
     priceLimitConfigChanged.emaSec = event.params.emaSec
 
-    const market = getOrCreateMarket(event.address.toHexString())
+    const market = getOrCreateMarket(priceLimitConfigChanged.market)
     market.normalOrderRatio = priceLimitConfigChanged.normalOrderRatio
     market.liquidationRatio = priceLimitConfigChanged.liquidationRatio
     market.emaNormalOrderRatio = priceLimitConfigChanged.emaNormalOrderRatio
