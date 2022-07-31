@@ -185,6 +185,7 @@ type FundingPaid @entity {
     "format: <tx hash>-<log index>"
     id: ID!
 
+    market: String!
     fundingRateX96: BigInt!
     elapsedSec: BigInt!
     premiumX96: BigInt!
@@ -201,6 +202,7 @@ type LiquidityAddedMarket @entity {
     "format: <tx hash>-<log index>"
     id: ID!
 
+    market: String!
     base: BigInt!
     quote: BigInt!
     liquidity: BigInt!
@@ -214,6 +216,7 @@ type LiquidityRemovedMarket @entity {
     "format: <tx hash>-<log index>"
     id: ID!
 
+    market: String!
     base: BigInt!
     quote: BigInt!
     liquidity: BigInt!
@@ -227,6 +230,7 @@ type Swapped @entity {
     "format: <tx hash>-<log index>"
     id: ID!
 
+    market: String!
     isBaseToQuote: Boolean!
     isExactInput: Boolean!
     amount: BigInt!
@@ -241,6 +245,7 @@ type PoolFeeRatioChanged @entity {
     "format: <tx hash>-<log index>"
     id: ID!
 
+    market: String!
     value: Int!
 
     "(block number * MAX_LOG_COUNT + log index) for sorting"
@@ -252,6 +257,7 @@ type FundingMaxPremiumRatioChanged @entity {
     "format: <tx hash>-<log index>"
     id: ID!
 
+    market: String!
     value: Int!
 
     "(block number * MAX_LOG_COUNT + log index) for sorting"
@@ -263,6 +269,7 @@ type FundingMaxElapsedSecChanged @entity {
     "format: <tx hash>-<log index>"
     id: ID!
 
+    market: String!
     value: BigInt!
 
     "(block number * MAX_LOG_COUNT + log index) for sorting"
@@ -274,6 +281,7 @@ type FundingRolloverSecChanged @entity {
     "format: <tx hash>-<log index>"
     id: ID!
 
+    market: String!
     value: BigInt!
 
     "(block number * MAX_LOG_COUNT + log index) for sorting"
@@ -285,6 +293,7 @@ type PriceLimitConfigChanged @entity {
     "format: <tx hash>-<log index>"
     id: ID!
 
+    market: String!
     normalOrderRatio: Int!
     liquidationRatio: Int!
     emaNormalOrderRatio: Int!
