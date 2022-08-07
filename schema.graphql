@@ -349,7 +349,7 @@ type Market @entity {
     cumBasePerLiquidityX96: BigInt!
     cumQuotePerLiquidityX96: BigInt!
     poolFeeRatio: Int!
-    maxPremiumRatio: Int!
+    fundingMaxPremiumRatio: Int!
     fundingMaxElapsedSec: BigInt!
     fundingRolloverSec: BigInt!
     normalOrderRatio: Int!

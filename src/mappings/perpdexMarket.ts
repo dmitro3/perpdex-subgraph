@@ -184,7 +184,7 @@ export function handleFundingMaxPremiumRatioChanged(event: FundingMaxPremiumRati
     fundingMaxPremiumRatioChanged.value = event.params.value
 
     const market = getOrCreateMarket(fundingMaxPremiumRatioChanged.market)
-    market.maxPremiumRatio = fundingMaxPremiumRatioChanged.value
+    market.fundingMaxPremiumRatio = fundingMaxPremiumRatioChanged.value
     market.timestamp = event.block.timestamp
 
     fundingMaxPremiumRatioChanged.save()
