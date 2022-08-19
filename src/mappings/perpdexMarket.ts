@@ -131,7 +131,7 @@ export function handleSwapped(event: SwappedEvent): void {
     swapped.amount = event.params.amount
     swapped.oppositeAmount = event.params.oppositeAmount
     swapped.fullLastOrderId = event.params.fullLastOrderId
-    swapped.oppositeAmount = event.params.partialOrderId
+    swapped.partialOrderId = event.params.partialOrderId
     swapped.basePartial = event.params.basePartial
     swapped.quotePartial = event.params.quotePartial
 
