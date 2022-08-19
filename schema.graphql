@@ -107,6 +107,39 @@ type PositionChanged @entity {
     timestamp: BigInt!
 }
 
+type LimitOrderCreatedExchange @entity {
+    "format: <tx hash>-<log index>"
+    id: ID!
+
+    exchange: String!
+    trader: String!
+    market: String!
+    isBid: Boolean!
+    base: BigInt!
+    priceX96: BigInt!
+    orderId: BigInt!
+
+    "(block number * MAX_LOG_COUNT + log index) for sorting"
+    blockNumberLogIndex: BigInt!
+    timestamp: BigInt!
+}
+
+type LimitOrderCanceledExchange @entity {
+    "format: <tx hash>-<log index>"
+    id: ID!
+
+    exchange: String!
+    trader: String!
+    market: String!
+    liquidator: String!
+    isBid: Boolean!
+    orderId: BigInt!
+
+    "(block number * MAX_LOG_COUNT + log index) for sorting"
+    blockNumberLogIndex: BigInt!
+    timestamp: BigInt!
+}
+
 type MaxMarketsPerAccountChanged @entity {
     "format: <tx hash>-<log index>"
     id: ID!
@@ -235,6 +268,38 @@ type Swapped @entity {
     isExactInput: Boolean!
     amount: BigInt!
     oppositeAmount: BigInt!
+    fullLastOrderId: BigInt!
+    partialOrderId: BigInt!
+    basePartial: BigInt!
+    quotePartial: BigInt!
+
+    "(block number * MAX_LOG_COUNT + log index) for sorting"
+    blockNumberLogIndex: BigInt!
+    timestamp: BigInt!
+}
+
+type LimitOrderCreatedMarket @entity {
+    "format: <tx hash>-<log index>"
+    id: ID!
+
+    market: String!
+    isBid: Boolean!
+    base: BigInt!
+    priceX96: BigInt!
+    orderId: BigInt!
+
+    "(block number * MAX_LOG_COUNT + log index) for sorting"
+    blockNumberLogIndex: BigInt!
+    timestamp: BigInt!
+}
+
+type LimitOrderCanceledMarket @entity {
+    "format: <tx hash>-<log index>"
+    id: ID!
+
+    market: String!
+    isBid: Boolean!
+    orderId: BigInt!
 
     "(block number * MAX_LOG_COUNT + log index) for sorting"
     blockNumberLogIndex: BigInt!
@@ -462,4 +527,34 @@ type DaySummary @entity {
     timestamp: BigInt!
     "total pnl aggregated per day for trader"
     realizedPnl: BigInt!
+}
+
+type OrderBook @entity {
+    "format: OrderBook:<market address>"
+    id: ID!
+
+    market: String!
+    bids: [BidOrderRow!]! @derivedFrom(field: "orderBook")
+    asks: [AskOrderRow!]! @derivedFrom(field: "orderBook")
+
+    "last updated block timestamp"
+    timestamp: BigInt!
+}
+
+type BidOrderRow @entity {
+    "format: <market address>-bid-<priceX96>"
+    id: ID!
+
+    priceX96: BigInt!
+    volume: BigInt!
+    orderBook: OrderBook!
+}
+
+type AskOrderRow @entity {
+    "format: <market address>-ask-<priceX96>"
+    id: ID!
+
+    priceX96: BigInt!
+    volume: BigInt!
+    orderBook: OrderBook!
 }

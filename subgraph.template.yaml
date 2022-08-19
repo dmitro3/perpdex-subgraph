@@ -55,6 +55,10 @@ dataSources:
                 handler: handlePositionChanged
               - event: PositionLiquidated(indexed address,indexed address,indexed address,int256,int256,int256,uint256,uint256,uint256,uint256,uint256,uint256)
                 handler: handlePositionLiquidated
+              - event: LimitOrderCreated(indexed address,indexed address,bool,uint256,uint256,uint256)
+                handler: handleLimitOrderCreatedExchange
+              - event: LimitOrderCanceled(indexed address,indexed address,indexed address,bool,uint256)
+                handler: handleLimitOrderCanceledExchange
               - event: MaxMarketsPerAccountChanged(uint8)
                 handler: handleMaxMarketsPerAccountChanged
               - event: ImRatioChanged(uint24)
@@ -100,8 +104,12 @@ templates:
             handler: handleLiquidityAdded
           - event: LiquidityRemoved(uint256,uint256,uint256)
             handler: handleLiquidityRemoved
-          - event: Swapped(bool,bool,uint256,uint256)
+          - event: Swapped(bool,bool,uint256,uint256,uint40,uint40,uint256,uint256)
             handler: handleSwapped
+          - event: LimitOrderCreated(bool,uint256,uint256,uint256)
+            handler: handleLimitOrderCreatedMarket
+          - event: LimitOrderCanceled(bool,uint256)
+            handler: handleLimitOrderCanceledMarket
           - event: PoolFeeRatioChanged(uint24)
             handler: handlePoolFeeRatioChanged
           - event: FundingMaxPremiumRatioChanged(uint24)

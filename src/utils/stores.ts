@@ -1,9 +1,12 @@
 import { BigInt, ethereum } from "@graphprotocol/graph-ts"
 import {
+    AskOrderRow,
+    BidOrderRow,
     Candle,
     DaySummary,
     LiquidityHistory,
     Market,
+    OrderBook,
     PositionHistory,
     Protocol,
     Trader,
@@ -255,4 +258,51 @@ export function createCandle(
             quoteAmount,
         )
     }
+}
+
+export function getOrCreateOrderBook(marketAddr: string): OrderBook {
+    let orderBook = OrderBook.load(`OrderBook:${marketAddr}`)
+    if (!orderBook) {
+        orderBook = new OrderBook(`OrderBook:${marketAddr}`)
+        orderBook.market = marketAddr
+        orderBook.timestamp = BI_ZERO
+    }
+    orderBook.save()
+    return orderBook
+}
+
+export function getOrCreateBidOrderRow(
+    marketAddr: string,
+    priceX96: BigInt,
+    volume: BigInt,
+    orderBookID: string,
+): BidOrderRow {
+    let bidOrderRow = BidOrderRow.load(`${marketAddr}-bid-${priceX96}`)
+    if (!bidOrderRow) {
+        bidOrderRow = new BidOrderRow(`${marketAddr}-bid-${priceX96}`)
+        bidOrderRow.priceX96 = priceX96
+        bidOrderRow.volume = BI_ZERO
+    }
+    bidOrderRow.volume = bidOrderRow.volume.plus(volume)
+    bidOrderRow.orderBook = orderBookID
+    bidOrderRow.save()
+    return bidOrderRow
+}
+
+export function getOrCreateAskOrderRow(
+    marketAddr: string,
+    priceX96: BigInt,
+    volume: BigInt,
+    orderBookID: string,
+): AskOrderRow {
+    let askOrderRow = AskOrderRow.load(`${marketAddr}-ask-${priceX96}`)
+    if (!askOrderRow) {
+        askOrderRow = new AskOrderRow(`${marketAddr}-ask-${priceX96}`)
+        askOrderRow.priceX96 = priceX96
+        askOrderRow.volume = BI_ZERO
+    }
+    askOrderRow.volume = askOrderRow.volume.plus(volume)
+    askOrderRow.orderBook = orderBookID
+    askOrderRow.save()
+    return askOrderRow
 }

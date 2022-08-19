@@ -4,6 +4,8 @@ import {
     FundingMaxPremiumRatioChanged,
     FundingPaid,
     FundingRolloverSecChanged,
+    LimitOrderCanceledMarket,
+    LimitOrderCreatedMarket,
     LiquidityAddedMarket,
     LiquidityRemovedMarket,
     PoolFeeRatioChanged,
@@ -15,6 +17,8 @@ import {
     FundingMaxPremiumRatioChanged as FundingMaxPremiumRatioChangedEvent,
     FundingPaid as FundingPaidEvent,
     FundingRolloverSecChanged as FundingRolloverSecChangedEvent,
+    LimitOrderCanceled as LimitOrderCanceledEvent,
+    LimitOrderCreated as LimitOrderCreatedEvent,
     LiquidityAdded as LiquidityAddedEvent,
     LiquidityRemoved as LiquidityRemovedEvent,
     PoolFeeRatioChanged as PoolFeeRatioChangedEvent,
@@ -126,6 +130,10 @@ export function handleSwapped(event: SwappedEvent): void {
     swapped.isExactInput = event.params.isExactInput
     swapped.amount = event.params.amount
     swapped.oppositeAmount = event.params.oppositeAmount
+    swapped.fullLastOrderId = event.params.fullLastOrderId
+    swapped.oppositeAmount = event.params.partialOrderId
+    swapped.basePartial = event.params.basePartial
+    swapped.quotePartial = event.params.quotePartial
 
     const protocol = getOrCreateProtocol()
     protocol.takerVolume = protocol.takerVolume.plus(swapped.amount)
@@ -155,6 +163,34 @@ export function handleSwapped(event: SwappedEvent): void {
     swapped.save()
     protocol.save()
     market.save()
+}
+
+export function handleLimitOrderCreatedMarket(event: LimitOrderCreatedEvent): void {
+    const limitOrderCreated = new LimitOrderCreatedMarket(
+        `${event.transaction.hash.toHexString()}-${event.logIndex.toString()}`,
+    )
+    limitOrderCreated.blockNumberLogIndex = getBlockNumberLogIndex(event)
+    limitOrderCreated.timestamp = event.block.timestamp
+    limitOrderCreated.market = event.address.toHexString()
+    limitOrderCreated.isBid = event.params.isBid
+    limitOrderCreated.base = event.params.base
+    limitOrderCreated.priceX96 = event.params.priceX96
+    limitOrderCreated.orderId = event.params.orderId
+
+    limitOrderCreated.save()
+}
+
+export function handleLimitOrderCanceledMarket(event: LimitOrderCanceledEvent): void {
+    const limitOrderCanceled = new LimitOrderCanceledMarket(
+        `${event.transaction.hash.toHexString()}-${event.logIndex.toString()}`,
+    )
+    limitOrderCanceled.blockNumberLogIndex = getBlockNumberLogIndex(event)
+    limitOrderCanceled.timestamp = event.block.timestamp
+    limitOrderCanceled.market = event.address.toHexString()
+    limitOrderCanceled.isBid = event.params.isBid
+    limitOrderCanceled.orderId = event.params.orderId
+
+    limitOrderCanceled.save()
 }
 
 export function handlePoolFeeRatioChanged(event: PoolFeeRatioChangedEvent): void {

@@ -2,6 +2,8 @@ import {
     Deposited as DepositedEvent,
     ImRatioChanged as ImRatioChangedEvent,
     IsMarketAllowedChanged as IsMarketAllowedChangedEvent,
+    LimitOrderCanceled as LimitOrderCanceledExchangeEvent,
+    LimitOrderCreated as LimitOrderCreatedExchangeEvent,
     LiquidationRewardConfigChanged as LiquidationRewardConfigChangedEvent,
     LiquidityAdded as LiquidityAddedExchangeEvent,
     LiquidityRemoved as LiquidityRemovedExchangeEvent,
@@ -17,6 +19,8 @@ import {
     Deposited,
     ImRatioChanged,
     IsMarketAllowedChanged,
+    LimitOrderCanceledExchange,
+    LimitOrderCreatedExchange,
     LiquidationRewardConfigChanged,
     LiquidityAddedExchange,
     LiquidityRemovedExchange,
@@ -35,8 +39,11 @@ import {
     createLiquidityHistory,
     createPositionHistory,
     getBlockNumberLogIndex,
+    getOrCreateAskOrderRow,
+    getOrCreateBidOrderRow,
     getOrCreateDaySummary,
     getOrCreateMarket,
+    getOrCreateOrderBook,
     getOrCreateProtocol,
     getOrCreateTrader,
     getOrCreateTraderMakerInfo,
@@ -404,6 +411,58 @@ export function handlePositionLiquidated(event: PositionLiquidatedEvent): void {
     liquidator.save()
     traderTakerInfo.save()
     daySummary.save()
+}
+
+export function handleLimitOrderCreatedExchange(event: LimitOrderCreatedExchangeEvent): void {
+    const limitOrderCreated = new LimitOrderCreatedExchange(
+        `${event.transaction.hash.toHexString()}-${event.logIndex.toString()}`,
+    )
+    limitOrderCreated.exchange = event.address.toHexString()
+    limitOrderCreated.blockNumberLogIndex = getBlockNumberLogIndex(event)
+    limitOrderCreated.timestamp = event.block.timestamp
+    limitOrderCreated.trader = event.params.trader.toHexString()
+    limitOrderCreated.market = event.params.market.toHexString()
+    limitOrderCreated.isBid = event.params.isBid
+    limitOrderCreated.base = event.params.base
+    limitOrderCreated.priceX96 = event.params.priceX96
+    limitOrderCreated.orderId = event.params.orderId
+
+    const orderBook = getOrCreateOrderBook(limitOrderCreated.market)
+    if (limitOrderCreated.isBid) {
+        getOrCreateBidOrderRow(
+            limitOrderCreated.market,
+            limitOrderCreated.priceX96,
+            limitOrderCreated.base,
+            orderBook.id,
+        )
+    } else {
+        getOrCreateAskOrderRow(
+            limitOrderCreated.market,
+            limitOrderCreated.priceX96,
+            limitOrderCreated.base,
+            orderBook.id,
+        )
+    }
+    orderBook.timestamp = limitOrderCreated.timestamp
+
+    limitOrderCreated.save()
+    orderBook.save()
+}
+
+export function handleLimitOrderCanceledExchange(event: LimitOrderCanceledExchangeEvent): void {
+    const limitOrderCanceled = new LimitOrderCanceledExchange(
+        `${event.transaction.hash.toHexString()}-${event.logIndex.toString()}`,
+    )
+    limitOrderCanceled.exchange = event.address.toHexString()
+    limitOrderCanceled.blockNumberLogIndex = getBlockNumberLogIndex(event)
+    limitOrderCanceled.timestamp = event.block.timestamp
+    limitOrderCanceled.trader = event.params.trader.toHexString()
+    limitOrderCanceled.market = event.params.market.toHexString()
+    limitOrderCanceled.liquidator = event.params.liquidator.toHexString()
+    limitOrderCanceled.isBid = event.params.isBid
+    limitOrderCanceled.orderId = event.params.orderId
+
+    limitOrderCanceled.save()
 }
 
 export function handleMaxMarketsPerAccountChanged(event: MaxMarketsPerAccountChangedEvent): void {

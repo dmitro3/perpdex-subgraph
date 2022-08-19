@@ -26,6 +26,22 @@
     "type": "constructor"
   },
   {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "prod1",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "denominator",
+        "type": "uint256"
+      }
+    ],
+    "name": "PRBMath__MulDivOverflow",
+    "type": "error"
+  },
+  {
     "anonymous": false,
     "inputs": [
       {
@@ -105,6 +121,56 @@
       }
     ],
     "name": "FundingRolloverSecChanged",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "isBid",
+        "type": "bool"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "orderId",
+        "type": "uint256"
+      }
+    ],
+    "name": "LimitOrderCanceled",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "isBid",
+        "type": "bool"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "base",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "priceX96",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "orderId",
+        "type": "uint256"
+      }
+    ],
+    "name": "LimitOrderCreated",
     "type": "event"
   },
   {
@@ -252,6 +318,30 @@
         "internalType": "uint256",
         "name": "oppositeAmount",
         "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint40",
+        "name": "fullLastOrderId",
+        "type": "uint40"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint40",
+        "name": "partialOrderId",
+        "type": "uint40"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "basePartial",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "quotePartial",
+        "type": "uint256"
       }
     ],
     "name": "Swapped",
@@ -302,6 +392,53 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bool",
+        "name": "isBid",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint40",
+        "name": "orderId",
+        "type": "uint40"
+      }
+    ],
+    "name": "cancelLimitOrder",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bool",
+        "name": "isBid",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint256",
+        "name": "base",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "priceX96",
+        "type": "uint256"
+      }
+    ],
+    "name": "createLimitOrder",
+    "outputs": [
+      {
+        "internalType": "uint40",
+        "name": "orderId",
+        "type": "uint40"
+      }
+    ],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -391,6 +528,69 @@
       {
         "internalType": "uint256",
         "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bool",
+        "name": "isBid",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint40",
+        "name": "orderId",
+        "type": "uint40"
+      }
+    ],
+    "name": "getLimitOrderExecution",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "executionId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "executedBase",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "executedQuote",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bool",
+        "name": "isBid",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint40",
+        "name": "orderId",
+        "type": "uint40"
+      }
+    ],
+    "name": "getLimitOrderInfo",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "base",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "priceX96",
         "type": "uint256"
       }
     ],
@@ -839,9 +1039,31 @@
     "name": "swap",
     "outputs": [
       {
-        "internalType": "uint256",
-        "name": "oppositeAmount",
-        "type": "uint256"
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "oppositeAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "basePartial",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "quotePartial",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint40",
+            "name": "partialKey",
+            "type": "uint40"
+          }
+        ],
+        "internalType": "struct IPerpdexMarketMinimum.SwapResponse",
+        "name": "response",
+        "type": "tuple"
       }
     ],
     "stateMutability": "nonpayable",
