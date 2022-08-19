@@ -1,9 +1,15 @@
-name: Testing
+name: deploy
 
-on: [push]
+on:
+  push:
+    branches:
+      - develop
 
 jobs:
-  test:
+  deploy:
+    strategy:
+      matrix:
+        target_network: [arbitrum-rinkeby, zksync2-testnet]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -11,12 +17,6 @@ jobs:
           persist-credentials: false
           submodules: recursive
 
-      # fix SSH error: git@github.com: Permission denied (publickey).
-      # copy from https://github.com/actions/setup-node/issues/214#issuecomment-810829250
-      - name: Reconfigure git to use HTTP authentication
-        run: >
-          git config --global url."https://github.com/".insteadOf
-          ssh://git@github.com/
       # https://github.com/actions/cache/blob/main/examples.md#node---yarn
       - name: Get yarn cache directory path
         id: yarn-cache-dir-path
@@ -34,8 +34,13 @@ jobs:
           node-version: 16.x
 
       - run: yarn install
+      - run: npx graph auth --product hosted-service $THE_GRAPH_ACCESS_TOKEN
+        env:
+          THE_GRAPH_ACCESS_TOKEN: ${{ secrets.THE_GRAPH_ACCESS_TOKEN }}
+
       - run: |
           yarn codegen
           yarn build
+          yarn deploy-the-graph
         env:
-          TARGET_NETWORK: arbitrum-rinkeby
+          TARGET_NETWORK: ${{ matrix.target_network }}
