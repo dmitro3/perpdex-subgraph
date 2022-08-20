@@ -167,9 +167,7 @@ export function createPositionHistory(
         .div(Q96)
     positionHistory.quoteBalance = positionHistory.quoteBalance.plus(quote)
     positionHistory.entryPrice =
-        positionHistory.baseBalance === BI_ZERO
-            ? BI_ZERO
-            : positionHistory.quoteBalance.div(positionHistory.baseBalance)
+        positionHistory.baseBalance == BI_ZERO ? BI_ZERO : positionHistory.quoteBalance.div(positionHistory.baseBalance)
     positionHistory.realizedPnl = positionHistory.realizedPnl.plus(realizedPnl)
     positionHistory.protocolFee = protocolFee
     positionHistory.save()
