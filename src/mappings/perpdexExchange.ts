@@ -38,16 +38,20 @@ import {
     createCandle,
     createLiquidityHistory,
     createPositionHistory,
+    excludeAskOrderRow,
+    excludeBidOrderRow,
     getBlockNumberLogIndex,
     getOrCreateAskOrderRow,
     getOrCreateBidOrderRow,
     getOrCreateDaySummary,
     getOrCreateMarket,
+    getOrCreateOrder,
     getOrCreateOrderBook,
     getOrCreateProtocol,
     getOrCreateTrader,
     getOrCreateTraderMakerInfo,
     getOrCreateTraderTakerInfo,
+    deleteOrder,
 } from "../utils/stores"
 
 export function handleDeposited(event: DepositedEvent): void {
@@ -427,6 +431,16 @@ export function handleLimitOrderCreatedExchange(event: LimitOrderCreatedExchange
     limitOrderCreated.priceX96 = event.params.priceX96
     limitOrderCreated.orderId = event.params.orderId
 
+    const order = getOrCreateOrder(
+        limitOrderCreated.trader,
+        limitOrderCreated.market,
+        limitOrderCreated.isBid,
+        limitOrderCreated.orderId,
+    )
+    order.priceX96 = limitOrderCreated.priceX96
+    order.volume = limitOrderCreated.base
+    order.timestamp = limitOrderCreated.timestamp
+
     const orderBook = getOrCreateOrderBook(limitOrderCreated.market)
     if (limitOrderCreated.isBid) {
         getOrCreateBidOrderRow(
@@ -446,6 +460,7 @@ export function handleLimitOrderCreatedExchange(event: LimitOrderCreatedExchange
     orderBook.timestamp = limitOrderCreated.timestamp
 
     limitOrderCreated.save()
+    order.save()
     orderBook.save()
 }
 
@@ -462,7 +477,29 @@ export function handleLimitOrderCanceledExchange(event: LimitOrderCanceledExchan
     limitOrderCanceled.isBid = event.params.isBid
     limitOrderCanceled.orderId = event.params.orderId
 
+    const order = getOrCreateOrder(
+        limitOrderCanceled.trader,
+        limitOrderCanceled.market,
+        limitOrderCanceled.isBid,
+        limitOrderCanceled.orderId,
+    )
+
+    const orderBook = getOrCreateOrderBook(limitOrderCanceled.market)
+    if (limitOrderCanceled.isBid) {
+        excludeBidOrderRow(order.market, order.priceX96, order.volume, orderBook.id)
+    } else {
+        excludeAskOrderRow(order.market, order.priceX96, order.volume, orderBook.id)
+    }
+
+    deleteOrder(
+        limitOrderCanceled.trader,
+        limitOrderCanceled.market,
+        limitOrderCanceled.isBid,
+        limitOrderCanceled.orderId,
+    )
+
     limitOrderCanceled.save()
+    orderBook.save()
 }
 
 export function handleMaxMarketsPerAccountChanged(event: MaxMarketsPerAccountChangedEvent): void {

@@ -1,4 +1,4 @@
-import { BigInt, ethereum } from "@graphprotocol/graph-ts"
+import { BigInt, ethereum, store } from "@graphprotocol/graph-ts"
 import {
     AskOrderRow,
     BidOrderRow,
@@ -6,6 +6,7 @@ import {
     DaySummary,
     LiquidityHistory,
     Market,
+    Order,
     OrderBook,
     PositionHistory,
     Protocol,
@@ -14,7 +15,7 @@ import {
     TraderTakerInfo,
 } from "../../generated/schema"
 import { ChainId, Network, Version } from "../constants"
-import { BI_ZERO, d1, h1, m15, m5, MAX_LOG_COUNT, Q96, STR_ZERO } from "./constants"
+import { ask, bid, BI_ZERO, d1, h1, m15, m5, MAX_LOG_COUNT, Q96, STR_ZERO } from "./constants"
 
 export function getBlockNumberLogIndex(event: ethereum.Event): BigInt {
     return event.block.number.times(BigInt.fromI32(MAX_LOG_COUNT)).plus(event.logIndex)
@@ -258,6 +259,28 @@ export function createCandle(
     }
 }
 
+export function getOrCreateOrder(traderAddr: string, marketAddr: string, isBid: boolean, orderId: BigInt): Order {
+    const way = isBid ? bid : ask
+    let order = Order.load(`${traderAddr}-${marketAddr}-${way}-${orderId}`)
+    if (!order) {
+        order = new Order(`${traderAddr}-${marketAddr}-${way}-${orderId}`)
+        order.trader = traderAddr
+        order.market = marketAddr
+        order.way = way
+        order.orderId = orderId
+        order.priceX96 = BI_ZERO
+        order.volume = BI_ZERO
+        order.timestamp = BI_ZERO
+    }
+    order.save()
+    return order
+}
+
+export function deleteOrder(traderAddr: string, marketAddr: string, isBid: boolean, orderId: BigInt): void {
+    const way = isBid ? bid : ask
+    store.remove("Order", `${traderAddr}-${marketAddr}-${way}-${orderId}`)
+}
+
 export function getOrCreateOrderBook(marketAddr: string): OrderBook {
     let orderBook = OrderBook.load(`OrderBook:${marketAddr}`)
     if (!orderBook) {
@@ -287,6 +310,24 @@ export function getOrCreateBidOrderRow(
     return bidOrderRow
 }
 
+export function excludeBidOrderRow(
+    marketAddr: string,
+    priceX96: BigInt,
+    volume: BigInt,
+    orderBookID: string,
+): BidOrderRow {
+    let bidOrderRow = BidOrderRow.load(`${marketAddr}-bid-${priceX96}`)
+    if (!bidOrderRow) {
+        bidOrderRow = new BidOrderRow(`${marketAddr}-bid-${priceX96}`)
+        bidOrderRow.priceX96 = priceX96
+        bidOrderRow.volume = BI_ZERO
+    }
+    bidOrderRow.volume = bidOrderRow.volume.minus(volume)
+    bidOrderRow.orderBook = orderBookID
+    bidOrderRow.save()
+    return bidOrderRow
+}
+
 export function getOrCreateAskOrderRow(
     marketAddr: string,
     priceX96: BigInt,
@@ -300,6 +341,24 @@ export function getOrCreateAskOrderRow(
         askOrderRow.volume = BI_ZERO
     }
     askOrderRow.volume = askOrderRow.volume.plus(volume)
+    askOrderRow.orderBook = orderBookID
+    askOrderRow.save()
+    return askOrderRow
+}
+
+export function excludeAskOrderRow(
+    marketAddr: string,
+    priceX96: BigInt,
+    volume: BigInt,
+    orderBookID: string,
+): AskOrderRow {
+    let askOrderRow = AskOrderRow.load(`${marketAddr}-ask-${priceX96}`)
+    if (!askOrderRow) {
+        askOrderRow = new AskOrderRow(`${marketAddr}-ask-${priceX96}`)
+        askOrderRow.priceX96 = priceX96
+        askOrderRow.volume = BI_ZERO
+    }
+    askOrderRow.volume = askOrderRow.volume.minus(volume)
     askOrderRow.orderBook = orderBookID
     askOrderRow.save()
     return askOrderRow

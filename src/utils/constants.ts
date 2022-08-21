@@ -11,3 +11,6 @@ export const h1 = 3600
 export const d1 = 86400
 
 export const MAX_LOG_COUNT = 10000
+
+export const bid = "bid"
+export const ask = "ask"

@@ -529,6 +529,22 @@ type DaySummary @entity {
     realizedPnl: BigInt!
 }
 
+type Order @entity {
+    "format: <trader address>-<market address>-<'bid' or 'ask'>-<order id>"
+    id: ID!
+
+    trader: String!
+    market: String!
+
+    "bid or ask"
+    way: String!
+    orderId: BigInt!
+    priceX96: BigInt!
+    volume: BigInt!
+
+    "last updated block timestamp"
+    timestamp: BigInt!
+}
 type OrderBook @entity {
     "format: OrderBook:<market address>"
     id: ID!
