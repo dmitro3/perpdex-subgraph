@@ -14,3 +14,6 @@ export const MAX_LOG_COUNT = 10000
 
 export const bid = "bid"
 export const ask = "ask"
+
+export const competitionStartedAt = BigInt.fromI32(1661007600) // Todo: set the timestamp when the competition actually starts
+export const competitionFinishedAt = BigInt.fromI32(1661612400) // Todo: set the timestamp when the competition actually finishes

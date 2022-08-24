@@ -2,6 +2,11 @@
   {
     "inputs": [
       {
+        "internalType": "address",
+        "name": "ownerArg",
+        "type": "address"
+      },
+      {
         "internalType": "string",
         "name": "symbolArg",
         "type": "string"
@@ -24,22 +29,6 @@
     ],
     "stateMutability": "nonpayable",
     "type": "constructor"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "prod1",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "denominator",
-        "type": "uint256"
-      }
-    ],
-    "name": "PRBMath__MulDivOverflow",
-    "type": "error"
   },
   {
     "anonymous": false,
@@ -248,11 +237,23 @@
       {
         "indexed": false,
         "internalType": "uint24",
-        "name": "value",
+        "name": "fixedFeeRatio",
         "type": "uint24"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint24",
+        "name": "atrFeeRatio",
+        "type": "uint24"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint32",
+        "name": "atrEmaBlocks",
+        "type": "uint32"
       }
     ],
-    "name": "PoolFeeRatioChanged",
+    "name": "PoolFeeConfigChanged",
     "type": "event"
   },
   {
@@ -413,6 +414,19 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "candleList",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "prevTimestamp",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "bool",
@@ -428,6 +442,11 @@
         "internalType": "uint256",
         "name": "priceX96",
         "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "ignorePostOnlyCheck",
+        "type": "bool"
       }
     ],
     "name": "createLimitOrder",
@@ -449,6 +468,19 @@
         "internalType": "address",
         "name": "",
         "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "feeRatio",
+    "outputs": [
+      {
+        "internalType": "uint24",
+        "name": "",
+        "type": "uint24"
       }
     ],
     "stateMutability": "view",
@@ -518,6 +550,83 @@
   },
   {
     "inputs": [],
+    "name": "getAskPriceX96",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "result",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getBidPriceX96",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "result",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint32",
+        "name": "interval",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint32",
+        "name": "startTime",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint256",
+        "name": "count",
+        "type": "uint256"
+      }
+    ],
+    "name": "getCandles",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint128",
+            "name": "closeX96",
+            "type": "uint128"
+          },
+          {
+            "internalType": "uint128",
+            "name": "quote",
+            "type": "uint128"
+          },
+          {
+            "internalType": "uint128",
+            "name": "highX96",
+            "type": "uint128"
+          },
+          {
+            "internalType": "uint128",
+            "name": "lowX96",
+            "type": "uint128"
+          }
+        ],
+        "internalType": "struct MarketStructs.Candle[]",
+        "name": "",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "getCumDeleveragedPerLiquidityX96",
     "outputs": [
       {
@@ -550,9 +659,9 @@
     "name": "getLimitOrderExecution",
     "outputs": [
       {
-        "internalType": "uint256",
+        "internalType": "uint48",
         "name": "executionId",
-        "type": "uint256"
+        "type": "uint48"
       },
       {
         "internalType": "uint256",
@@ -711,6 +820,54 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "bool",
+        "name": "isBaseToQuote",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "isExactInput",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint256",
+        "name": "priceX96",
+        "type": "uint256"
+      }
+    ],
+    "name": "maxSwapByPrice",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes[]",
+        "name": "data",
+        "type": "bytes[]"
+      }
+    ],
+    "name": "multicall",
+    "outputs": [
+      {
+        "internalType": "bytes[]",
+        "name": "results",
+        "type": "bytes[]"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "owner",
     "outputs": [
@@ -725,12 +882,50 @@
   },
   {
     "inputs": [],
-    "name": "poolFeeRatio",
+    "name": "poolFeeConfig",
     "outputs": [
       {
         "internalType": "uint24",
-        "name": "",
+        "name": "fixedFeeRatio",
         "type": "uint24"
+      },
+      {
+        "internalType": "uint24",
+        "name": "atrFeeRatio",
+        "type": "uint24"
+      },
+      {
+        "internalType": "uint32",
+        "name": "atrEmaBlocks",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "poolFeeInfo",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "atrX96",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "referenceTimestamp",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "currentHighX96",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "currentLowX96",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -963,12 +1158,29 @@
   {
     "inputs": [
       {
-        "internalType": "uint24",
+        "components": [
+          {
+            "internalType": "uint24",
+            "name": "fixedFeeRatio",
+            "type": "uint24"
+          },
+          {
+            "internalType": "uint24",
+            "name": "atrFeeRatio",
+            "type": "uint24"
+          },
+          {
+            "internalType": "uint32",
+            "name": "atrEmaBlocks",
+            "type": "uint32"
+          }
+        ],
+        "internalType": "struct MarketStructs.PoolFeeConfig",
         "name": "value",
-        "type": "uint24"
+        "type": "tuple"
       }
     ],
-    "name": "setPoolFeeRatio",
+    "name": "setPoolFeeConfig",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -1057,7 +1269,7 @@
           },
           {
             "internalType": "uint40",
-            "name": "partialKey",
+            "name": "partialOrderId",
             "type": "uint40"
           }
         ],

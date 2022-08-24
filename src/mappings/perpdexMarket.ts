@@ -8,7 +8,6 @@ import {
     LimitOrderCreatedMarket,
     LiquidityAddedMarket,
     LiquidityRemovedMarket,
-    PoolFeeRatioChanged,
     PriceLimitConfigChanged,
     Swapped,
 } from "../../generated/schema"
@@ -21,7 +20,6 @@ import {
     LimitOrderCreated as LimitOrderCreatedEvent,
     LiquidityAdded as LiquidityAddedEvent,
     LiquidityRemoved as LiquidityRemovedEvent,
-    PoolFeeRatioChanged as PoolFeeRatioChangedEvent,
     PriceLimitConfigChanged as PriceLimitConfigChangedEvent,
     Swapped as SwappedEvent,
 } from "../../generated/templates/PerpdexMarket/PerpdexMarket"
@@ -191,23 +189,6 @@ export function handleLimitOrderCanceledMarket(event: LimitOrderCanceledEvent): 
     limitOrderCanceled.orderId = event.params.orderId
 
     limitOrderCanceled.save()
-}
-
-export function handlePoolFeeRatioChanged(event: PoolFeeRatioChangedEvent): void {
-    const poolFeeRatioChanged = new PoolFeeRatioChanged(
-        `${event.transaction.hash.toHexString()}-${event.logIndex.toString()}`,
-    )
-    poolFeeRatioChanged.blockNumberLogIndex = getBlockNumberLogIndex(event)
-    poolFeeRatioChanged.timestamp = event.block.timestamp
-    poolFeeRatioChanged.market = event.address.toHexString()
-    poolFeeRatioChanged.value = event.params.value
-
-    const market = getOrCreateMarket(poolFeeRatioChanged.market)
-    market.poolFeeRatio = poolFeeRatioChanged.value
-    market.timestamp = event.block.timestamp
-
-    poolFeeRatioChanged.save()
-    market.save()
 }
 
 export function handleFundingMaxPremiumRatioChanged(event: FundingMaxPremiumRatioChangedEvent): void {

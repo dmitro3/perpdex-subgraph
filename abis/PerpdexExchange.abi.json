@@ -11,20 +11,23 @@
     "type": "constructor"
   },
   {
+    "anonymous": false,
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "prod1",
-        "type": "uint256"
+        "indexed": true,
+        "internalType": "address",
+        "name": "trader",
+        "type": "address"
       },
       {
+        "indexed": false,
         "internalType": "uint256",
-        "name": "denominator",
+        "name": "amount",
         "type": "uint256"
       }
     ],
-    "name": "PRBMath__MulDivOverflow",
-    "type": "error"
+    "name": "CollateralCompensated",
+    "type": "event"
   },
   {
     "anonymous": false,
@@ -56,25 +59,6 @@
       }
     ],
     "name": "ImRatioChanged",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "market",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "bool",
-        "name": "isMarketAllowed",
-        "type": "bool"
-      }
-    ],
-    "name": "IsMarketAllowedChanged",
     "type": "event"
   },
   {
@@ -149,12 +133,61 @@
       },
       {
         "indexed": false,
+        "internalType": "enum PerpdexStructs.LimitOrderType",
+        "name": "limitOrderType",
+        "type": "uint8"
+      },
+      {
+        "indexed": false,
         "internalType": "uint256",
         "name": "orderId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "baseTaker",
         "type": "uint256"
       }
     ],
     "name": "LimitOrderCreated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "trader",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "market",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "int256",
+        "name": "base",
+        "type": "int256"
+      },
+      {
+        "indexed": false,
+        "internalType": "int256",
+        "name": "quote",
+        "type": "int256"
+      },
+      {
+        "indexed": false,
+        "internalType": "int256",
+        "name": "realizedPnl",
+        "type": "int256"
+      }
+    ],
+    "name": "LimitOrderSettled",
     "type": "event"
   },
   {
@@ -220,18 +253,6 @@
         "internalType": "uint256",
         "name": "cumQuotePerLiquidityX96",
         "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "baseBalancePerShareX96",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "sharePriceAfterX96",
-        "type": "uint256"
       }
     ],
     "name": "LiquidityAdded",
@@ -293,21 +314,28 @@
         "internalType": "int256",
         "name": "realizedPnl",
         "type": "int256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "baseBalancePerShareX96",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "sharePriceAfterX96",
-        "type": "uint256"
       }
     ],
     "name": "LiquidityRemoved",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "market",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "enum PerpdexStructs.MarketStatus",
+        "name": "status",
+        "type": "uint8"
+      }
+    ],
+    "name": "MarketStatusChanged",
     "type": "event"
   },
   {
@@ -321,6 +349,19 @@
       }
     ],
     "name": "MaxMarketsPerAccountChanged",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint8",
+        "name": "value",
+        "type": "uint8"
+      }
+    ],
+    "name": "MaxOrdersPerAccountChanged",
     "type": "event"
   },
   {
@@ -353,6 +394,49 @@
       }
     ],
     "name": "OwnershipTransferred",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "maker",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "market",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "isBid",
+        "type": "bool"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "basePartial",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "quotePartial",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "int256",
+        "name": "partialRealizedPnl",
+        "type": "int256"
+      }
+    ],
+    "name": "PartiallyExecuted",
     "type": "event"
   },
   {
@@ -561,6 +645,11 @@
         "internalType": "struct PerpdexStructs.VaultInfo",
         "name": "vaultInfo",
         "type": "tuple"
+      },
+      {
+        "internalType": "uint8",
+        "name": "limitOrderCount",
+        "type": "uint8"
       }
     ],
     "stateMutability": "view",
@@ -665,6 +754,19 @@
   {
     "inputs": [
       {
+        "internalType": "address",
+        "name": "market",
+        "type": "address"
+      }
+    ],
+    "name": "closeMarket",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "components": [
           {
             "internalType": "address",
@@ -690,6 +792,11 @@
             "internalType": "uint256",
             "name": "deadline",
             "type": "uint256"
+          },
+          {
+            "internalType": "enum PerpdexStructs.LimitOrderType",
+            "name": "limitOrderType",
+            "type": "uint8"
           }
         ],
         "internalType": "struct IPerpdexExchange.CreateLimitOrderParams",
@@ -703,6 +810,16 @@
         "internalType": "uint40",
         "name": "orderId",
         "type": "uint40"
+      },
+      {
+        "internalType": "uint256",
+        "name": "baseTaker",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "quoteTaker",
+        "type": "uint256"
       }
     ],
     "stateMutability": "nonpayable",
@@ -746,6 +863,25 @@
         "internalType": "address",
         "name": "trader",
         "type": "address"
+      }
+    ],
+    "name": "getCollateralBalance",
+    "outputs": [
+      {
+        "internalType": "int256",
+        "name": "",
+        "type": "int256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "trader",
+        "type": "address"
       },
       {
         "internalType": "address",
@@ -764,6 +900,91 @@
         "internalType": "uint40[]",
         "name": "",
         "type": "uint40[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "trader",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "market",
+        "type": "address"
+      }
+    ],
+    "name": "getLimitOrderInfo",
+    "outputs": [
+      {
+        "internalType": "uint40",
+        "name": "askRoot",
+        "type": "uint40"
+      },
+      {
+        "internalType": "uint40",
+        "name": "bidRoot",
+        "type": "uint40"
+      },
+      {
+        "internalType": "uint256",
+        "name": "totalBaseAsk",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "totalBaseBid",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "trader",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "market",
+        "type": "address"
+      },
+      {
+        "internalType": "bool",
+        "name": "isBid",
+        "type": "bool"
+      }
+    ],
+    "name": "getLimitOrderSummaries",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint40",
+            "name": "orderId",
+            "type": "uint40"
+          },
+          {
+            "internalType": "uint256",
+            "name": "base",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "priceX96",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct PerpdexStructs.LimitOrderSummary[]",
+        "name": "",
+        "type": "tuple[]"
       }
     ],
     "stateMutability": "view",
@@ -948,13 +1169,49 @@
         "internalType": "address",
         "name": "trader",
         "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "market",
+        "type": "address"
+      }
+    ],
+    "name": "getTakerInfoLazy",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "int256",
+            "name": "baseBalanceShare",
+            "type": "int256"
+          },
+          {
+            "internalType": "int256",
+            "name": "quoteBalance",
+            "type": "int256"
+          }
+        ],
+        "internalType": "struct PerpdexStructs.TakerInfo",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "trader",
+        "type": "address"
       }
     ],
     "name": "getTotalAccountValue",
     "outputs": [
       {
         "internalType": "int256",
-        "name": "accountValue",
+        "name": "",
         "type": "int256"
       }
     ],
@@ -1055,9 +1312,9 @@
     "name": "insuranceFundInfo",
     "outputs": [
       {
-        "internalType": "int256",
+        "internalType": "uint256",
         "name": "balance",
-        "type": "int256"
+        "type": "uint256"
       },
       {
         "internalType": "uint256",
@@ -1088,25 +1345,6 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "isMarketAllowed",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [],
     "name": "liquidationRewardConfig",
     "outputs": [
@@ -1125,8 +1363,40 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "marketStatuses",
+    "outputs": [
+      {
+        "internalType": "enum PerpdexStructs.MarketStatus",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "maxMarketsPerAccount",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "maxOrdersPerAccount",
     "outputs": [
       {
         "internalType": "uint8",
@@ -1194,6 +1464,25 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes[]",
+        "name": "data",
+        "type": "bytes[]"
+      }
+    ],
+    "name": "multicall",
+    "outputs": [
+      {
+        "internalType": "bytes[]",
+        "name": "results",
+        "type": "bytes[]"
+      }
+    ],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -1430,24 +1719,6 @@
   {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "market",
-        "type": "address"
-      },
-      {
-        "internalType": "bool",
-        "name": "value",
-        "type": "bool"
-      }
-    ],
-    "name": "setIsMarketAllowed",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
         "components": [
           {
             "internalType": "uint24",
@@ -1473,12 +1744,43 @@
   {
     "inputs": [
       {
+        "internalType": "address",
+        "name": "market",
+        "type": "address"
+      },
+      {
+        "internalType": "enum PerpdexStructs.MarketStatus",
+        "name": "status",
+        "type": "uint8"
+      }
+    ],
+    "name": "setMarketStatus",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "uint8",
         "name": "value",
         "type": "uint8"
       }
     ],
     "name": "setMaxMarketsPerAccount",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint8",
+        "name": "value",
+        "type": "uint8"
+      }
+    ],
+    "name": "setMaxOrdersPerAccount",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

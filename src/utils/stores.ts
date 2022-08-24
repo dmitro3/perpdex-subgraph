@@ -9,6 +9,7 @@ import {
     Order,
     OrderBook,
     PositionHistory,
+    ProfitRatio,
     Protocol,
     Trader,
     TraderMakerInfo,
@@ -79,6 +80,7 @@ export function getOrCreateProtocol(): Protocol {
         protocol.protocolFee = BI_ZERO
         protocol.insuranceFundBalance = BI_ZERO
         protocol.maxMarketsPerAccount = 0
+        protocol.maxOrdersPerAccount = 0
         protocol.imRatio = 0
         protocol.mmRatio = 0
         protocol.rewardRatio = 0
@@ -114,6 +116,7 @@ export function getOrCreateMarket(marketAddr: string): Market {
         market.emaNormalOrderRatio = 0
         market.emaLiquidationRatio = 0
         market.emaSec = BI_ZERO
+        market.status = 0
 
         market.timestampAdded = BI_ZERO
         market.timestamp = BI_ZERO
@@ -244,7 +247,7 @@ export function createCandle(
     quoteAmount: BigInt,
 ): void {
     const intervals = [m5, m15, h1, d1]
-    const priceX96 = sharePriceX96.times(Q96).div(baseBalancePerShareX96)
+    const priceX96 = baseBalancePerShareX96 == BI_ZERO ? BI_ZERO : sharePriceX96.times(Q96).div(baseBalancePerShareX96)
 
     for (let i = 0; i < intervals.length; i++) {
         const interval = intervals[i]
@@ -270,6 +273,7 @@ export function getOrCreateOrder(traderAddr: string, marketAddr: string, isBid: 
         order.orderId = orderId
         order.priceX96 = BI_ZERO
         order.volume = BI_ZERO
+        order.limitOrderType = 0
         order.timestamp = BI_ZERO
     }
     order.save()
@@ -292,12 +296,7 @@ export function getOrCreateOrderBook(marketAddr: string): OrderBook {
     return orderBook
 }
 
-export function getOrCreateBidOrderRow(
-    marketAddr: string,
-    priceX96: BigInt,
-    volume: BigInt,
-    orderBookID: string,
-): BidOrderRow {
+export function addBidOrderRow(marketAddr: string, priceX96: BigInt, volume: BigInt, orderBookID: string): void {
     let bidOrderRow = BidOrderRow.load(`${marketAddr}-bid-${priceX96}`)
     if (!bidOrderRow) {
         bidOrderRow = new BidOrderRow(`${marketAddr}-bid-${priceX96}`)
@@ -307,15 +306,9 @@ export function getOrCreateBidOrderRow(
     bidOrderRow.volume = bidOrderRow.volume.plus(volume)
     bidOrderRow.orderBook = orderBookID
     bidOrderRow.save()
-    return bidOrderRow
 }
 
-export function excludeBidOrderRow(
-    marketAddr: string,
-    priceX96: BigInt,
-    volume: BigInt,
-    orderBookID: string,
-): BidOrderRow {
+export function excludeBidOrderRow(marketAddr: string, priceX96: BigInt, volume: BigInt, orderBookID: string): void {
     let bidOrderRow = BidOrderRow.load(`${marketAddr}-bid-${priceX96}`)
     if (!bidOrderRow) {
         bidOrderRow = new BidOrderRow(`${marketAddr}-bid-${priceX96}`)
@@ -325,15 +318,9 @@ export function excludeBidOrderRow(
     bidOrderRow.volume = bidOrderRow.volume.minus(volume)
     bidOrderRow.orderBook = orderBookID
     bidOrderRow.save()
-    return bidOrderRow
 }
 
-export function getOrCreateAskOrderRow(
-    marketAddr: string,
-    priceX96: BigInt,
-    volume: BigInt,
-    orderBookID: string,
-): AskOrderRow {
+export function addAskOrderRow(marketAddr: string, priceX96: BigInt, volume: BigInt, orderBookID: string): void {
     let askOrderRow = AskOrderRow.load(`${marketAddr}-ask-${priceX96}`)
     if (!askOrderRow) {
         askOrderRow = new AskOrderRow(`${marketAddr}-ask-${priceX96}`)
@@ -343,15 +330,9 @@ export function getOrCreateAskOrderRow(
     askOrderRow.volume = askOrderRow.volume.plus(volume)
     askOrderRow.orderBook = orderBookID
     askOrderRow.save()
-    return askOrderRow
 }
 
-export function excludeAskOrderRow(
-    marketAddr: string,
-    priceX96: BigInt,
-    volume: BigInt,
-    orderBookID: string,
-): AskOrderRow {
+export function excludeAskOrderRow(marketAddr: string, priceX96: BigInt, volume: BigInt, orderBookID: string): void {
     let askOrderRow = AskOrderRow.load(`${marketAddr}-ask-${priceX96}`)
     if (!askOrderRow) {
         askOrderRow = new AskOrderRow(`${marketAddr}-ask-${priceX96}`)
@@ -361,5 +342,19 @@ export function excludeAskOrderRow(
     askOrderRow.volume = askOrderRow.volume.minus(volume)
     askOrderRow.orderBook = orderBookID
     askOrderRow.save()
-    return askOrderRow
+}
+
+export function getOrCreateProfitRatio(traderAddr: string, startedAt: BigInt, finishedAt: BigInt): ProfitRatio {
+    let profitRatio = ProfitRatio.load(`${traderAddr}-${startedAt}-${finishedAt}`)
+    if (!profitRatio) {
+        profitRatio = new ProfitRatio(`${traderAddr}-${startedAt}-${finishedAt}`)
+        profitRatio.trader = traderAddr
+        profitRatio.startedAt = startedAt
+        profitRatio.finishedAt = finishedAt
+        profitRatio.profitRatio = BI_ZERO
+        profitRatio.profit = BI_ZERO
+        profitRatio.deposit = BI_ZERO
+    }
+    profitRatio.save()
+    return profitRatio
 }

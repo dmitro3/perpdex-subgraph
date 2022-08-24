@@ -41,26 +41,34 @@ dataSources:
               - name: PerpdexExchange
                 file: ./abis/PerpdexExchange.abi.json
           eventHandlers:
+              - event: CollateralCompensated(indexed address,uint256)
+                handler: handleCollateralCompensated
               - event: Deposited(indexed address,uint256)
                 handler: handleDeposited
               - event: Withdrawn(indexed address,uint256)
                 handler: handleWithdrawn
               - event: ProtocolFeeTransferred(indexed address,uint256)
                 handler: handleProtocolFeeTransferred
-              - event: LiquidityAdded(indexed address,indexed address,uint256,uint256,uint256,uint256,uint256,uint256,uint256)
+              - event: LiquidityAdded(indexed address,indexed address,uint256,uint256,uint256,uint256,uint256)
                 handler: handleLiquidityAddedExchange
-              - event: LiquidityRemoved(indexed address,indexed address,address,uint256,uint256,uint256,int256,int256,int256,uint256,uint256)
+              - event: LiquidityRemoved(indexed address,indexed address,address,uint256,uint256,uint256,int256,int256,int256)
                 handler: handleLiquidityRemovedExchange
               - event: PositionChanged(indexed address,indexed address,int256,int256,int256,uint256,uint256,uint256)
                 handler: handlePositionChanged
               - event: PositionLiquidated(indexed address,indexed address,indexed address,int256,int256,int256,uint256,uint256,uint256,uint256,uint256,uint256)
                 handler: handlePositionLiquidated
-              - event: LimitOrderCreated(indexed address,indexed address,bool,uint256,uint256,uint256)
+              - event: LimitOrderCreated(indexed address,indexed address,bool,uint256,uint256,uint8,uint256,uint256)
                 handler: handleLimitOrderCreatedExchange
               - event: LimitOrderCanceled(indexed address,indexed address,indexed address,bool,uint256)
                 handler: handleLimitOrderCanceledExchange
+              - event: PartiallyExecuted(indexed address,indexed address,bool,uint256,uint256,int256)
+                handler: handlePartiallyExecuted
+              - event: LimitOrderSettled(indexed address,indexed address,int256,int256,int256)
+                handler: handleLimitOrderSettled
               - event: MaxMarketsPerAccountChanged(uint8)
                 handler: handleMaxMarketsPerAccountChanged
+              - event: MaxOrdersPerAccountChanged(uint8)
+                handler: handleMaxOrdersPerAccountChanged
               - event: ImRatioChanged(uint24)
                 handler: handleImRatioChanged
               - event: MmRatioChanged(uint24)
@@ -69,8 +77,8 @@ dataSources:
                 handler: handleLiquidationRewardConfigChanged
               - event:  ProtocolFeeRatioChanged(uint24)
                 handler: handleProtocolFeeRatioChanged
-              - event: IsMarketAllowedChanged(indexed address,bool)
-                handler: handleIsMarketAllowedChanged
+              - event: MarketStatusChanged(indexed address,uint8)
+                handler: handleMarketStatusChanged
 templates:
     - kind: ethereum/contract
       name: PerpdexMarket
@@ -87,7 +95,6 @@ templates:
           - LiquidityAdded
           - LiquidityRemoved
           - Swapped
-          - PoolFeeRatioChanged
           - FundingMaxPremiumRatioChanged
           - FundingMaxElapsedSecChanged
           - FundingRolloverSecChanged
@@ -110,8 +117,6 @@ templates:
             handler: handleLimitOrderCreatedMarket
           - event: LimitOrderCanceled(bool,uint256)
             handler: handleLimitOrderCanceledMarket
-          - event: PoolFeeRatioChanged(uint24)
-            handler: handlePoolFeeRatioChanged
           - event: FundingMaxPremiumRatioChanged(uint24)
             handler: handleFundingMaxPremiumRatioChanged
           - event: FundingMaxElapsedSecChanged(uint32)

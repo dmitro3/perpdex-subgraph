@@ -1,14 +1,18 @@
 import {
+    CollateralCompensated as CollateralCompensatedEvent,
     Deposited as DepositedEvent,
     ImRatioChanged as ImRatioChangedEvent,
-    IsMarketAllowedChanged as IsMarketAllowedChangedEvent,
     LimitOrderCanceled as LimitOrderCanceledExchangeEvent,
     LimitOrderCreated as LimitOrderCreatedExchangeEvent,
+    LimitOrderSettled as LimitOrderSettledEvent,
     LiquidationRewardConfigChanged as LiquidationRewardConfigChangedEvent,
     LiquidityAdded as LiquidityAddedExchangeEvent,
     LiquidityRemoved as LiquidityRemovedExchangeEvent,
+    MarketStatusChanged as MarketStatusChangedEvent,
     MaxMarketsPerAccountChanged as MaxMarketsPerAccountChangedEvent,
+    MaxOrdersPerAccountChanged as MaxOrdersPerAccountChangedEvent,
     MmRatioChanged as MmRatioChangedEvent,
+    PartiallyExecuted as PartiallyExecutedEvent,
     PositionChanged as PositionChangedEvent,
     PositionLiquidated as PositionLiquidatedEvent,
     ProtocolFeeRatioChanged as ProtocolFeeRatioChangedEvent,
@@ -16,43 +20,82 @@ import {
     Withdrawn as WithdrawnEvent,
 } from "../../generated/PerpdexExchange/PerpdexExchange"
 import {
+    CollateralCompensated,
     Deposited,
     ImRatioChanged,
-    IsMarketAllowedChanged,
     LimitOrderCanceledExchange,
     LimitOrderCreatedExchange,
+    LimitOrderSettled,
     LiquidationRewardConfigChanged,
     LiquidityAddedExchange,
     LiquidityRemovedExchange,
+    MarketStatusChanged,
     MaxMarketsPerAccountChanged,
+    MaxOrdersPerAccountChanged,
     MmRatioChanged,
+    PartiallyExecuted,
     PositionChanged,
     ProtocolFeeRatioChanged,
     ProtocolFeeTransferred,
     Withdrawn,
 } from "../../generated/schema"
 import { PerpdexMarket } from "../../generated/templates"
-import { BI_ZERO, Q96 } from "../utils/constants"
-import { pushMarket } from "../utils/model"
+import { BI_ZERO, competitionFinishedAt, competitionStartedAt, Q96 } from "../utils/constants"
+import { isWithinPeriod, pushMarket } from "../utils/model"
 import {
+    addAskOrderRow,
+    addBidOrderRow,
     createCandle,
     createLiquidityHistory,
     createPositionHistory,
+    deleteOrder,
     excludeAskOrderRow,
     excludeBidOrderRow,
     getBlockNumberLogIndex,
-    getOrCreateAskOrderRow,
-    getOrCreateBidOrderRow,
     getOrCreateDaySummary,
     getOrCreateMarket,
     getOrCreateOrder,
     getOrCreateOrderBook,
+    getOrCreateProfitRatio,
     getOrCreateProtocol,
     getOrCreateTrader,
     getOrCreateTraderMakerInfo,
     getOrCreateTraderTakerInfo,
-    deleteOrder,
 } from "../utils/stores"
+
+export function handleCollateralCompensated(event: CollateralCompensatedEvent): void {
+    const collateralCompensated = new CollateralCompensated(
+        `${event.transaction.hash.toHexString()}-${event.logIndex.toString()}`,
+    )
+    collateralCompensated.exchange = event.address.toHexString()
+    collateralCompensated.blockNumberLogIndex = getBlockNumberLogIndex(event)
+    collateralCompensated.timestamp = event.block.timestamp
+    collateralCompensated.trader = event.params.trader.toHexString()
+    collateralCompensated.amount = event.params.amount
+
+    const protocol = getOrCreateProtocol()
+    protocol.insuranceFundBalance = protocol.insuranceFundBalance.minus(collateralCompensated.amount)
+    protocol.timestamp = collateralCompensated.timestamp
+
+    const trader = getOrCreateTrader(collateralCompensated.trader)
+    trader.collateralBalance = trader.collateralBalance.plus(collateralCompensated.amount)
+    trader.timestamp = collateralCompensated.timestamp
+
+    if (isWithinPeriod(collateralCompensated.timestamp, competitionStartedAt, competitionFinishedAt)) {
+        const profitRatio = getOrCreateProfitRatio(
+            collateralCompensated.trader,
+            competitionStartedAt,
+            competitionFinishedAt,
+        )
+        profitRatio.deposit = profitRatio.deposit.plus(collateralCompensated.amount)
+        profitRatio.profitRatio = profitRatio.deposit == BI_ZERO ? BI_ZERO : profitRatio.profit.div(profitRatio.deposit)
+        profitRatio.save()
+    }
+
+    collateralCompensated.save()
+    protocol.save()
+    trader.save()
+}
 
 export function handleDeposited(event: DepositedEvent): void {
     const deposited = new Deposited(`${event.transaction.hash.toHexString()}-${event.logIndex.toString()}`)
@@ -62,16 +105,19 @@ export function handleDeposited(event: DepositedEvent): void {
     deposited.trader = event.params.trader.toHexString()
     deposited.amount = event.params.amount
 
-    const trader = getOrCreateTrader(event.params.trader.toHexString())
+    const trader = getOrCreateTrader(deposited.trader)
     trader.collateralBalance = trader.collateralBalance.plus(deposited.amount)
-    trader.timestamp = event.block.timestamp
+    trader.timestamp = deposited.timestamp
 
-    const protocol = getOrCreateProtocol()
-    protocol.timestamp = event.block.timestamp
+    if (isWithinPeriod(deposited.timestamp, competitionStartedAt, competitionFinishedAt)) {
+        const profitRatio = getOrCreateProfitRatio(deposited.trader, competitionStartedAt, competitionFinishedAt)
+        profitRatio.deposit = profitRatio.deposit.plus(deposited.amount)
+        profitRatio.profitRatio = profitRatio.deposit == BI_ZERO ? BI_ZERO : profitRatio.profit.div(profitRatio.deposit)
+        profitRatio.save()
+    }
 
     deposited.save()
     trader.save()
-    protocol.save()
 }
 
 export function handleWithdrawn(event: WithdrawnEvent): void {
@@ -84,14 +130,10 @@ export function handleWithdrawn(event: WithdrawnEvent): void {
 
     const trader = getOrCreateTrader(event.params.trader.toHexString())
     trader.collateralBalance = trader.collateralBalance.minus(withdrawn.amount)
-    trader.timestamp = event.block.timestamp
-
-    const protocol = getOrCreateProtocol()
-    protocol.timestamp = event.block.timestamp
+    trader.timestamp = withdrawn.timestamp
 
     withdrawn.save()
     trader.save()
-    protocol.save()
 }
 
 export function handleProtocolFeeTransferred(event: ProtocolFeeTransferredEvent): void {
@@ -104,17 +146,28 @@ export function handleProtocolFeeTransferred(event: ProtocolFeeTransferredEvent)
     protocolFeeTransferred.trader = event.params.trader.toHexString()
     protocolFeeTransferred.amount = event.params.amount
 
-    const trader = getOrCreateTrader(event.params.trader.toHexString())
-    trader.collateralBalance = trader.collateralBalance.plus(protocolFeeTransferred.amount)
-    trader.timestamp = event.block.timestamp
-
     const protocol = getOrCreateProtocol()
     protocol.protocolFee = protocol.protocolFee.minus(protocolFeeTransferred.amount)
-    protocol.timestamp = event.block.timestamp
+    protocol.timestamp = protocolFeeTransferred.timestamp
+
+    const trader = getOrCreateTrader(event.params.trader.toHexString())
+    trader.collateralBalance = trader.collateralBalance.plus(protocolFeeTransferred.amount)
+    trader.timestamp = protocolFeeTransferred.timestamp
+
+    if (isWithinPeriod(protocolFeeTransferred.timestamp, competitionStartedAt, competitionFinishedAt)) {
+        const profitRatio = getOrCreateProfitRatio(
+            protocolFeeTransferred.trader,
+            competitionStartedAt,
+            competitionFinishedAt,
+        )
+        profitRatio.profit = profitRatio.profit.plus(protocolFeeTransferred.amount)
+        profitRatio.profitRatio = profitRatio.deposit == BI_ZERO ? BI_ZERO : profitRatio.profit.div(profitRatio.deposit)
+        profitRatio.save()
+    }
 
     protocolFeeTransferred.save()
-    trader.save()
     protocol.save()
+    trader.save()
 }
 
 export function handleLiquidityAddedExchange(event: LiquidityAddedExchangeEvent): void {
@@ -131,48 +184,27 @@ export function handleLiquidityAddedExchange(event: LiquidityAddedExchangeEvent)
     liquidityAddedExchange.liquidity = event.params.liquidity
     liquidityAddedExchange.cumBasePerLiquidityX96 = event.params.cumBasePerLiquidityX96
     liquidityAddedExchange.cumQuotePerLiquidityX96 = event.params.cumQuotePerLiquidityX96
-    liquidityAddedExchange.baseBalancePerShareX96 = event.params.baseBalancePerShareX96
-    liquidityAddedExchange.sharePriceAfterX96 = event.params.sharePriceAfterX96
 
-    const protocol = getOrCreateProtocol()
-    protocol.timestamp = event.block.timestamp
-
-    const market = getOrCreateMarket(liquidityAddedExchange.market)
-    market.baseBalancePerShareX96 = liquidityAddedExchange.baseBalancePerShareX96
-    market.sharePriceAfterX96 = liquidityAddedExchange.sharePriceAfterX96
-    market.timestamp = event.block.timestamp
-
-    const trader = getOrCreateTrader(event.params.trader.toHexString())
+    const trader = getOrCreateTrader(liquidityAddedExchange.trader)
     pushMarket(trader.markets, liquidityAddedExchange.market)
-    trader.timestamp = event.block.timestamp
+    trader.timestamp = liquidityAddedExchange.timestamp
 
     const traderMakerInfo = getOrCreateTraderMakerInfo(liquidityAddedExchange.trader, liquidityAddedExchange.market)
     traderMakerInfo.liquidity = traderMakerInfo.liquidity.plus(liquidityAddedExchange.liquidity)
     traderMakerInfo.cumBaseSharePerLiquidityX96 = liquidityAddedExchange.cumBasePerLiquidityX96
     traderMakerInfo.cumQuotePerLiquidityX96 = liquidityAddedExchange.cumQuotePerLiquidityX96
-    traderMakerInfo.timestamp = event.block.timestamp
+    traderMakerInfo.timestamp = liquidityAddedExchange.timestamp
 
     createLiquidityHistory(
         liquidityAddedExchange.trader,
         liquidityAddedExchange.market,
-        event.block.timestamp,
+        liquidityAddedExchange.timestamp,
         liquidityAddedExchange.base,
         liquidityAddedExchange.quote,
         liquidityAddedExchange.liquidity,
     )
 
-    createCandle(
-        liquidityAddedExchange.market,
-        event.block.timestamp,
-        liquidityAddedExchange.sharePriceAfterX96,
-        liquidityAddedExchange.baseBalancePerShareX96,
-        BI_ZERO,
-        BI_ZERO,
-    )
-
     liquidityAddedExchange.save()
-    protocol.save()
-    market.save()
     trader.save()
     traderMakerInfo.save()
 }
@@ -193,63 +225,53 @@ export function handleLiquidityRemovedExchange(event: LiquidityRemovedExchangeEv
     liquidityRemovedExchange.takerBase = event.params.takerBase
     liquidityRemovedExchange.takerQuote = event.params.takerQuote
     liquidityRemovedExchange.realizedPnl = event.params.realizedPnl
-    liquidityRemovedExchange.baseBalancePerShareX96 = event.params.baseBalancePerShareX96
-    liquidityRemovedExchange.sharePriceAfterX96 = event.params.sharePriceAfterX96
-
-    const protocol = getOrCreateProtocol()
-    protocol.timestamp = event.block.timestamp
-
-    const market = getOrCreateMarket(liquidityRemovedExchange.market)
-    market.baseBalancePerShareX96 = liquidityRemovedExchange.baseBalancePerShareX96
-    market.sharePriceAfterX96 = liquidityRemovedExchange.sharePriceAfterX96
-    market.timestamp = event.block.timestamp
 
     const trader = getOrCreateTrader(liquidityRemovedExchange.trader)
     pushMarket(trader.markets, liquidityRemovedExchange.market)
     trader.collateralBalance = trader.collateralBalance.plus(liquidityRemovedExchange.realizedPnl)
-    trader.timestamp = event.block.timestamp
+    trader.timestamp = liquidityRemovedExchange.timestamp
+
+    const market = getOrCreateMarket(liquidityRemovedExchange.market)
 
     const traderTakerInfo = getOrCreateTraderTakerInfo(liquidityRemovedExchange.trader, liquidityRemovedExchange.market)
     traderTakerInfo.baseBalanceShare = traderTakerInfo.baseBalanceShare.plus(liquidityRemovedExchange.takerBase)
-    traderTakerInfo.baseBalance = traderTakerInfo.baseBalanceShare
-        .times(liquidityRemovedExchange.baseBalancePerShareX96)
-        .div(Q96)
+    traderTakerInfo.baseBalance = traderTakerInfo.baseBalanceShare.times(market.baseBalancePerShareX96).div(Q96)
     traderTakerInfo.quoteBalance = traderTakerInfo.quoteBalance
         .plus(liquidityRemovedExchange.takerQuote)
         .minus(liquidityRemovedExchange.realizedPnl)
     traderTakerInfo.entryPrice =
         traderTakerInfo.baseBalance == BI_ZERO ? BI_ZERO : traderTakerInfo.quoteBalance.div(traderTakerInfo.baseBalance)
-    traderTakerInfo.timestamp = event.block.timestamp
+    traderTakerInfo.timestamp = liquidityRemovedExchange.timestamp
 
     const traderMakerInfo = getOrCreateTraderMakerInfo(liquidityRemovedExchange.trader, liquidityRemovedExchange.market)
     traderMakerInfo.liquidity = traderMakerInfo.liquidity.minus(liquidityRemovedExchange.liquidity)
-    traderMakerInfo.timestamp = event.block.timestamp
+    traderMakerInfo.timestamp = liquidityRemovedExchange.timestamp
 
-    const daySummary = getOrCreateDaySummary(liquidityRemovedExchange.trader, event.block.timestamp)
+    const daySummary = getOrCreateDaySummary(liquidityRemovedExchange.trader, liquidityRemovedExchange.timestamp)
     daySummary.realizedPnl = daySummary.realizedPnl.plus(liquidityRemovedExchange.realizedPnl)
-    daySummary.timestamp = event.block.timestamp
+    daySummary.timestamp = liquidityRemovedExchange.timestamp
+
+    if (isWithinPeriod(liquidityRemovedExchange.timestamp, competitionStartedAt, competitionFinishedAt)) {
+        const profitRatio = getOrCreateProfitRatio(
+            liquidityRemovedExchange.trader,
+            competitionStartedAt,
+            competitionFinishedAt,
+        )
+        profitRatio.profit = profitRatio.profit.plus(liquidityRemovedExchange.realizedPnl)
+        profitRatio.profitRatio = profitRatio.deposit == BI_ZERO ? BI_ZERO : profitRatio.profit.div(profitRatio.deposit)
+        profitRatio.save()
+    }
 
     createLiquidityHistory(
         liquidityRemovedExchange.trader,
         liquidityRemovedExchange.market,
-        event.block.timestamp,
-        liquidityRemovedExchange.base.neg(),
-        liquidityRemovedExchange.quote.neg(),
-        liquidityRemovedExchange.liquidity.neg(),
-    )
-
-    createCandle(
-        liquidityRemovedExchange.market,
-        event.block.timestamp,
-        liquidityRemovedExchange.sharePriceAfterX96,
-        liquidityRemovedExchange.baseBalancePerShareX96,
-        BI_ZERO,
-        BI_ZERO,
+        liquidityRemovedExchange.timestamp,
+        liquidityRemovedExchange.base,
+        liquidityRemovedExchange.quote,
+        liquidityRemovedExchange.liquidity,
     )
 
     liquidityRemovedExchange.save()
-    protocol.save()
-    market.save()
     trader.save()
     traderTakerInfo.save()
     traderMakerInfo.save()
@@ -272,17 +294,17 @@ export function handlePositionChanged(event: PositionChangedEvent): void {
 
     const protocol = getOrCreateProtocol()
     protocol.protocolFee = protocol.protocolFee.plus(positionChanged.protocolFee)
-    protocol.timestamp = event.block.timestamp
+    protocol.timestamp = positionChanged.timestamp
 
     const market = getOrCreateMarket(positionChanged.market)
     market.baseBalancePerShareX96 = positionChanged.baseBalancePerShareX96
     market.sharePriceAfterX96 = positionChanged.sharePriceAfterX96
-    market.timestamp = event.block.timestamp
+    market.timestamp = positionChanged.timestamp
 
-    const trader = getOrCreateTrader(event.params.trader.toHexString())
+    const trader = getOrCreateTrader(positionChanged.trader)
     pushMarket(trader.markets, positionChanged.market)
     trader.collateralBalance = trader.collateralBalance.plus(positionChanged.realizedPnl)
-    trader.timestamp = event.block.timestamp
+    trader.timestamp = positionChanged.timestamp
 
     const traderTakerInfo = getOrCreateTraderTakerInfo(positionChanged.trader, positionChanged.market)
     traderTakerInfo.baseBalanceShare = traderTakerInfo.baseBalanceShare.plus(positionChanged.base)
@@ -294,16 +316,23 @@ export function handlePositionChanged(event: PositionChangedEvent): void {
         .minus(positionChanged.realizedPnl)
     traderTakerInfo.entryPrice =
         traderTakerInfo.baseBalance == BI_ZERO ? BI_ZERO : traderTakerInfo.quoteBalance.div(traderTakerInfo.baseBalance)
-    traderTakerInfo.timestamp = event.block.timestamp
+    traderTakerInfo.timestamp = positionChanged.timestamp
 
-    const daySummary = getOrCreateDaySummary(event.params.trader.toHexString(), event.block.timestamp)
+    const daySummary = getOrCreateDaySummary(positionChanged.trader, positionChanged.timestamp)
     daySummary.realizedPnl = daySummary.realizedPnl.plus(positionChanged.realizedPnl)
-    daySummary.timestamp = event.block.timestamp
+    daySummary.timestamp = positionChanged.timestamp
+
+    if (isWithinPeriod(positionChanged.timestamp, competitionStartedAt, competitionFinishedAt)) {
+        const profitRatio = getOrCreateProfitRatio(positionChanged.trader, competitionStartedAt, competitionFinishedAt)
+        profitRatio.profit = profitRatio.profit.plus(positionChanged.realizedPnl)
+        profitRatio.profitRatio = profitRatio.deposit == BI_ZERO ? BI_ZERO : profitRatio.profit.div(profitRatio.deposit)
+        profitRatio.save()
+    }
 
     createPositionHistory(
         positionChanged.trader,
         positionChanged.market,
-        event.block.timestamp,
+        positionChanged.timestamp,
         positionChanged.base,
         positionChanged.baseBalancePerShareX96,
         positionChanged.quote,
@@ -313,7 +342,7 @@ export function handlePositionChanged(event: PositionChangedEvent): void {
 
     createCandle(
         positionChanged.market,
-        event.block.timestamp,
+        positionChanged.timestamp,
         positionChanged.sharePriceAfterX96,
         positionChanged.baseBalancePerShareX96,
         positionChanged.base,
@@ -351,24 +380,24 @@ export function handlePositionLiquidated(event: PositionLiquidatedEvent): void {
     const protocol = getOrCreateProtocol()
     protocol.protocolFee = protocol.protocolFee.plus(positionLiquidated.protocolFee)
     protocol.insuranceFundBalance = protocol.insuranceFundBalance.plus(positionLiquidated.insuranceFundReward!)
-    protocol.timestamp = event.block.timestamp
+    protocol.timestamp = positionLiquidated.timestamp
 
     const market = getOrCreateMarket(positionLiquidated.market)
     market.baseBalancePerShareX96 = positionLiquidated.baseBalancePerShareX96
     market.sharePriceAfterX96 = positionLiquidated.sharePriceAfterX96
-    market.timestamp = event.block.timestamp
+    market.timestamp = positionLiquidated.timestamp
 
     const trader = getOrCreateTrader(positionLiquidated.trader)
     pushMarket(trader.markets, positionLiquidated.market)
     trader.collateralBalance = trader.collateralBalance
         .plus(positionLiquidated.realizedPnl)
         .minus(positionLiquidated.liquidationPenalty!)
-    trader.timestamp = event.block.timestamp
+    trader.timestamp = positionLiquidated.timestamp
 
     const liquidator = getOrCreateTrader(positionLiquidated.liquidator!)
-    pushMarket(trader.markets, positionLiquidated.market)
-    trader.collateralBalance = trader.collateralBalance.plus(positionLiquidated.liquidationReward!)
-    trader.timestamp = event.block.timestamp
+    pushMarket(liquidator.markets, positionLiquidated.market)
+    liquidator.collateralBalance = liquidator.collateralBalance.plus(positionLiquidated.liquidationReward!)
+    liquidator.timestamp = positionLiquidated.timestamp
 
     const traderTakerInfo = getOrCreateTraderTakerInfo(positionLiquidated.trader, positionLiquidated.market)
     traderTakerInfo.baseBalanceShare = traderTakerInfo.baseBalanceShare.plus(positionLiquidated.base)
@@ -380,18 +409,50 @@ export function handlePositionLiquidated(event: PositionLiquidatedEvent): void {
         .minus(positionLiquidated.realizedPnl)
     traderTakerInfo.entryPrice =
         traderTakerInfo.baseBalance == BI_ZERO ? BI_ZERO : traderTakerInfo.quoteBalance.div(traderTakerInfo.baseBalance)
-    traderTakerInfo.timestamp = event.block.timestamp
+    traderTakerInfo.timestamp = positionLiquidated.timestamp
 
-    const daySummary = getOrCreateDaySummary(event.params.trader.toHexString(), event.block.timestamp)
-    daySummary.realizedPnl = daySummary.realizedPnl
+    const daySummaryOfTrader = getOrCreateDaySummary(positionLiquidated.trader, positionLiquidated.timestamp)
+    daySummaryOfTrader.realizedPnl = daySummaryOfTrader.realizedPnl
         .plus(positionLiquidated.realizedPnl)
         .minus(positionLiquidated.liquidationPenalty!)
-    daySummary.timestamp = event.block.timestamp
+    daySummaryOfTrader.timestamp = positionLiquidated.timestamp
+
+    const daySummaryOfLiquidator = getOrCreateDaySummary(positionLiquidated.liquidator!, positionLiquidated.timestamp)
+    daySummaryOfLiquidator.realizedPnl = daySummaryOfLiquidator.realizedPnl.plus(positionLiquidated.liquidationReward!)
+    daySummaryOfLiquidator.timestamp = positionLiquidated.timestamp
+
+    if (isWithinPeriod(positionLiquidated.timestamp, competitionStartedAt, competitionFinishedAt)) {
+        const profitRatioOfTrader = getOrCreateProfitRatio(
+            positionLiquidated.trader,
+            competitionStartedAt,
+            competitionFinishedAt,
+        )
+        profitRatioOfTrader.profit = profitRatioOfTrader.profit
+            .plus(positionLiquidated.realizedPnl)
+            .minus(positionLiquidated.liquidationPenalty!)
+        profitRatioOfTrader.profitRatio =
+            profitRatioOfTrader.deposit == BI_ZERO
+                ? BI_ZERO
+                : profitRatioOfTrader.profit.div(profitRatioOfTrader.deposit)
+        profitRatioOfTrader.save()
+
+        const profitRatioOfLiquidator = getOrCreateProfitRatio(
+            positionLiquidated.liquidator!,
+            competitionStartedAt,
+            competitionFinishedAt,
+        )
+        profitRatioOfLiquidator.profit = profitRatioOfLiquidator.profit.plus(positionLiquidated.liquidationReward!)
+        profitRatioOfLiquidator.profitRatio =
+            profitRatioOfLiquidator.deposit == BI_ZERO
+                ? BI_ZERO
+                : profitRatioOfLiquidator.profit.div(profitRatioOfLiquidator.deposit)
+        profitRatioOfLiquidator.save()
+    }
 
     createPositionHistory(
         positionLiquidated.trader,
         positionLiquidated.market,
-        event.block.timestamp,
+        positionLiquidated.timestamp,
         positionLiquidated.base,
         positionLiquidated.baseBalancePerShareX96,
         positionLiquidated.quote,
@@ -401,7 +462,7 @@ export function handlePositionLiquidated(event: PositionLiquidatedEvent): void {
 
     createCandle(
         positionLiquidated.market,
-        event.block.timestamp,
+        positionLiquidated.timestamp,
         positionLiquidated.sharePriceAfterX96,
         positionLiquidated.baseBalancePerShareX96,
         positionLiquidated.base,
@@ -414,7 +475,8 @@ export function handlePositionLiquidated(event: PositionLiquidatedEvent): void {
     trader.save()
     liquidator.save()
     traderTakerInfo.save()
-    daySummary.save()
+    daySummaryOfTrader.save()
+    daySummaryOfLiquidator.save()
 }
 
 export function handleLimitOrderCreatedExchange(event: LimitOrderCreatedExchangeEvent): void {
@@ -429,7 +491,9 @@ export function handleLimitOrderCreatedExchange(event: LimitOrderCreatedExchange
     limitOrderCreated.isBid = event.params.isBid
     limitOrderCreated.base = event.params.base
     limitOrderCreated.priceX96 = event.params.priceX96
+    limitOrderCreated.limitOrderType = event.params.limitOrderType
     limitOrderCreated.orderId = event.params.orderId
+    limitOrderCreated.baseTaker = event.params.baseTaker
 
     const order = getOrCreateOrder(
         limitOrderCreated.trader,
@@ -438,22 +502,23 @@ export function handleLimitOrderCreatedExchange(event: LimitOrderCreatedExchange
         limitOrderCreated.orderId,
     )
     order.priceX96 = limitOrderCreated.priceX96
-    order.volume = limitOrderCreated.base
+    order.volume = limitOrderCreated.base.minus(limitOrderCreated.baseTaker)
+    order.limitOrderType = limitOrderCreated.limitOrderType
     order.timestamp = limitOrderCreated.timestamp
 
     const orderBook = getOrCreateOrderBook(limitOrderCreated.market)
     if (limitOrderCreated.isBid) {
-        getOrCreateBidOrderRow(
+        addBidOrderRow(
             limitOrderCreated.market,
             limitOrderCreated.priceX96,
-            limitOrderCreated.base,
+            limitOrderCreated.base.minus(limitOrderCreated.baseTaker),
             orderBook.id,
         )
     } else {
-        getOrCreateAskOrderRow(
+        addAskOrderRow(
             limitOrderCreated.market,
             limitOrderCreated.priceX96,
-            limitOrderCreated.base,
+            limitOrderCreated.base.minus(limitOrderCreated.baseTaker),
             orderBook.id,
         )
     }
@@ -502,6 +567,121 @@ export function handleLimitOrderCanceledExchange(event: LimitOrderCanceledExchan
     orderBook.save()
 }
 
+export function handlePartiallyExecuted(event: PartiallyExecutedEvent): void {
+    const partiallyExecuted = new PartiallyExecuted(
+        `${event.transaction.hash.toHexString()}-${event.logIndex.toString()}`,
+    )
+    partiallyExecuted.exchange = event.address.toHexString()
+    partiallyExecuted.blockNumberLogIndex = getBlockNumberLogIndex(event)
+    partiallyExecuted.timestamp = event.block.timestamp
+    partiallyExecuted.maker = event.params.maker.toHexString()
+    partiallyExecuted.market = event.params.market.toHexString()
+    partiallyExecuted.isBid = event.params.isBid
+    partiallyExecuted.basePartial = event.params.basePartial
+    partiallyExecuted.quotePartial = event.params.quotePartial
+    partiallyExecuted.partialRealizedPnl = event.params.partialRealizedPnl
+
+    const trader = getOrCreateTrader(partiallyExecuted.maker)
+    pushMarket(trader.markets, partiallyExecuted.market)
+    trader.collateralBalance = trader.collateralBalance.plus(partiallyExecuted.partialRealizedPnl)
+    trader.timestamp = partiallyExecuted.timestamp
+
+    const market = getOrCreateMarket(partiallyExecuted.market)
+
+    const traderTakerInfo = getOrCreateTraderTakerInfo(partiallyExecuted.maker, partiallyExecuted.market)
+    if (partiallyExecuted.isBid) {
+        traderTakerInfo.baseBalanceShare = traderTakerInfo.baseBalanceShare.plus(partiallyExecuted.basePartial)
+        traderTakerInfo.quoteBalance = traderTakerInfo.quoteBalance
+            .minus(partiallyExecuted.quotePartial)
+            .minus(partiallyExecuted.partialRealizedPnl)
+    } else {
+        traderTakerInfo.baseBalanceShare = traderTakerInfo.baseBalanceShare.minus(partiallyExecuted.basePartial)
+        traderTakerInfo.quoteBalance = traderTakerInfo.quoteBalance
+            .plus(partiallyExecuted.quotePartial)
+            .minus(partiallyExecuted.partialRealizedPnl)
+    }
+    traderTakerInfo.baseBalance = traderTakerInfo.baseBalanceShare.times(market.baseBalancePerShareX96).div(Q96)
+    traderTakerInfo.entryPrice =
+        traderTakerInfo.baseBalance == BI_ZERO ? BI_ZERO : traderTakerInfo.quoteBalance.div(traderTakerInfo.baseBalance)
+    traderTakerInfo.timestamp = partiallyExecuted.timestamp
+
+    const daySummary = getOrCreateDaySummary(partiallyExecuted.maker, partiallyExecuted.timestamp)
+    daySummary.realizedPnl = daySummary.realizedPnl.plus(partiallyExecuted.partialRealizedPnl)
+    daySummary.timestamp = partiallyExecuted.timestamp
+
+    if (isWithinPeriod(partiallyExecuted.timestamp, competitionStartedAt, competitionFinishedAt)) {
+        const profitRatio = getOrCreateProfitRatio(partiallyExecuted.maker, competitionStartedAt, competitionFinishedAt)
+        profitRatio.profit = profitRatio.profit.plus(partiallyExecuted.partialRealizedPnl)
+        profitRatio.profitRatio = profitRatio.deposit == BI_ZERO ? BI_ZERO : profitRatio.profit.div(profitRatio.deposit)
+        profitRatio.save()
+    }
+
+    createPositionHistory(
+        partiallyExecuted.maker,
+        partiallyExecuted.market,
+        partiallyExecuted.timestamp,
+        partiallyExecuted.basePartial,
+        market.baseBalancePerShareX96,
+        partiallyExecuted.quotePartial,
+        partiallyExecuted.partialRealizedPnl,
+        BI_ZERO,
+    )
+
+    partiallyExecuted.save()
+    trader.save()
+    traderTakerInfo.save()
+    daySummary.save()
+}
+
+export function handleLimitOrderSettled(event: LimitOrderSettledEvent): void {
+    const limitOrderSettled = new LimitOrderSettled(
+        `${event.transaction.hash.toHexString()}-${event.logIndex.toString()}`,
+    )
+    limitOrderSettled.exchange = event.address.toHexString()
+    limitOrderSettled.blockNumberLogIndex = getBlockNumberLogIndex(event)
+    limitOrderSettled.timestamp = event.block.timestamp
+    limitOrderSettled.trader = event.params.trader.toHexString()
+    limitOrderSettled.market = event.params.market.toHexString()
+    limitOrderSettled.base = event.params.base
+    limitOrderSettled.quote = event.params.quote
+    limitOrderSettled.realizedPnl = event.params.realizedPnl
+
+    const trader = getOrCreateTrader(limitOrderSettled.trader)
+    pushMarket(trader.markets, limitOrderSettled.market)
+    trader.collateralBalance = trader.collateralBalance.plus(limitOrderSettled.realizedPnl)
+    trader.timestamp = limitOrderSettled.timestamp
+
+    const market = getOrCreateMarket(limitOrderSettled.market)
+
+    const traderTakerInfo = getOrCreateTraderTakerInfo(limitOrderSettled.trader, limitOrderSettled.market)
+    traderTakerInfo.baseBalanceShare = traderTakerInfo.baseBalanceShare.plus(limitOrderSettled.base)
+    traderTakerInfo.baseBalance = traderTakerInfo.baseBalanceShare.times(market.baseBalancePerShareX96).div(Q96)
+    traderTakerInfo.quoteBalance = traderTakerInfo.quoteBalance.plus(limitOrderSettled.quote)
+    traderTakerInfo.entryPrice =
+        traderTakerInfo.baseBalance == BI_ZERO ? BI_ZERO : traderTakerInfo.quoteBalance.div(traderTakerInfo.baseBalance)
+    traderTakerInfo.timestamp = limitOrderSettled.timestamp
+
+    const daySummary = getOrCreateDaySummary(limitOrderSettled.trader, limitOrderSettled.timestamp)
+    daySummary.realizedPnl = daySummary.realizedPnl.plus(limitOrderSettled.realizedPnl)
+    daySummary.timestamp = limitOrderSettled.timestamp
+
+    if (isWithinPeriod(limitOrderSettled.timestamp, competitionStartedAt, competitionFinishedAt)) {
+        const profitRatio = getOrCreateProfitRatio(
+            limitOrderSettled.trader,
+            competitionStartedAt,
+            competitionFinishedAt,
+        )
+        profitRatio.profit = profitRatio.profit.plus(limitOrderSettled.realizedPnl)
+        profitRatio.profitRatio = profitRatio.deposit == BI_ZERO ? BI_ZERO : profitRatio.profit.div(profitRatio.deposit)
+        profitRatio.save()
+    }
+
+    limitOrderSettled.save()
+    trader.save()
+    traderTakerInfo.save()
+    daySummary.save()
+}
+
 export function handleMaxMarketsPerAccountChanged(event: MaxMarketsPerAccountChangedEvent): void {
     const maxMarketsPerAccountChanged = new MaxMarketsPerAccountChanged(
         `${event.transaction.hash.toHexString()}-${event.logIndex.toString()}`,
@@ -513,9 +693,26 @@ export function handleMaxMarketsPerAccountChanged(event: MaxMarketsPerAccountCha
 
     const protocol = getOrCreateProtocol()
     protocol.maxMarketsPerAccount = maxMarketsPerAccountChanged.value
-    protocol.timestamp = event.block.timestamp
+    protocol.timestamp = maxMarketsPerAccountChanged.timestamp
 
     maxMarketsPerAccountChanged.save()
+    protocol.save()
+}
+
+export function handleMaxOrdersPerAccountChanged(event: MaxOrdersPerAccountChangedEvent): void {
+    const maxOrdersPerAccountChanged = new MaxOrdersPerAccountChanged(
+        `${event.transaction.hash.toHexString()}-${event.logIndex.toString()}`,
+    )
+    maxOrdersPerAccountChanged.exchange = event.address.toHexString()
+    maxOrdersPerAccountChanged.blockNumberLogIndex = getBlockNumberLogIndex(event)
+    maxOrdersPerAccountChanged.timestamp = event.block.timestamp
+    maxOrdersPerAccountChanged.value = event.params.value
+
+    const protocol = getOrCreateProtocol()
+    protocol.maxOrdersPerAccount = maxOrdersPerAccountChanged.value
+    protocol.timestamp = maxOrdersPerAccountChanged.timestamp
+
+    maxOrdersPerAccountChanged.save()
     protocol.save()
 }
 
@@ -528,7 +725,7 @@ export function handleImRatioChanged(event: ImRatioChangedEvent): void {
 
     const protocol = getOrCreateProtocol()
     protocol.imRatio = imRatioChanged.value
-    protocol.timestamp = event.block.timestamp
+    protocol.timestamp = imRatioChanged.timestamp
 
     imRatioChanged.save()
     protocol.save()
@@ -543,7 +740,7 @@ export function handleMmRatioChanged(event: MmRatioChangedEvent): void {
 
     const protocol = getOrCreateProtocol()
     protocol.mmRatio = mmRatioChanged.value
-    protocol.timestamp = event.block.timestamp
+    protocol.timestamp = mmRatioChanged.timestamp
 
     mmRatioChanged.save()
     protocol.save()
@@ -562,7 +759,7 @@ export function handleLiquidationRewardConfigChanged(event: LiquidationRewardCon
     const protocol = getOrCreateProtocol()
     protocol.rewardRatio = liquidationRewardConfigChanged.rewardRatio
     protocol.smoothEmaTime = liquidationRewardConfigChanged.smoothEmaTime
-    protocol.timestamp = event.block.timestamp
+    protocol.timestamp = liquidationRewardConfigChanged.timestamp
 
     liquidationRewardConfigChanged.save()
     protocol.save()
@@ -579,27 +776,28 @@ export function handleProtocolFeeRatioChanged(event: ProtocolFeeRatioChangedEven
 
     const protocol = getOrCreateProtocol()
     protocol.protocolFeeRatio = protocolFeeRatioChanged.value
-    protocol.timestamp = event.block.timestamp
+    protocol.timestamp = protocolFeeRatioChanged.timestamp
 
     protocolFeeRatioChanged.save()
     protocol.save()
 }
 
-export function handleIsMarketAllowedChanged(event: IsMarketAllowedChangedEvent): void {
-    const isMarketAllowedChanged = new IsMarketAllowedChanged(
+export function handleMarketStatusChanged(event: MarketStatusChangedEvent): void {
+    const marketStatusChanged = new MarketStatusChanged(
         `${event.transaction.hash.toHexString()}-${event.logIndex.toString()}`,
     )
-    isMarketAllowedChanged.exchange = event.address.toHexString()
-    isMarketAllowedChanged.blockNumberLogIndex = getBlockNumberLogIndex(event)
-    isMarketAllowedChanged.timestamp = event.block.timestamp
-    isMarketAllowedChanged.market = event.params.market.toHexString()
-    isMarketAllowedChanged.isMarketAllowed = event.params.isMarketAllowed
+    marketStatusChanged.exchange = event.address.toHexString()
+    marketStatusChanged.blockNumberLogIndex = getBlockNumberLogIndex(event)
+    marketStatusChanged.timestamp = event.block.timestamp
+    marketStatusChanged.market = event.params.market.toHexString()
+    marketStatusChanged.status = event.params.status
 
-    const market = getOrCreateMarket(isMarketAllowedChanged.market)
-    market.timestamp = event.block.timestamp
+    const market = getOrCreateMarket(marketStatusChanged.market)
+    market.timestamp = marketStatusChanged.timestamp
+    market.status = marketStatusChanged.status
 
     PerpdexMarket.create(event.params.market)
 
-    isMarketAllowedChanged.save()
+    marketStatusChanged.save()
     market.save()
 }

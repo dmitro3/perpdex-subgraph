@@ -1,5 +1,18 @@
 # entities one-to-one correspondence with event
 
+type CollateralCompensated @entity {
+    "format: <tx hash>-<log index>"
+    id: ID!
+
+    exchange: String!
+    trader: String!
+    amount: BigInt!
+
+    "(block number * MAX_LOG_COUNT + log index) for sorting"
+    blockNumberLogIndex: BigInt!
+    timestamp: BigInt!
+}
+
 type Deposited @entity {
     "format: <tx hash>-<log index>"
     id: ID!
@@ -51,8 +64,6 @@ type LiquidityAddedExchange @entity {
     liquidity: BigInt!
     cumBasePerLiquidityX96: BigInt!
     cumQuotePerLiquidityX96: BigInt!
-    baseBalancePerShareX96: BigInt!
-    sharePriceAfterX96: BigInt!
 
     "(block number * MAX_LOG_COUNT + log index) for sorting"
     blockNumberLogIndex: BigInt!
@@ -73,8 +84,6 @@ type LiquidityRemovedExchange @entity {
     takerBase: BigInt!
     takerQuote: BigInt!
     realizedPnl: BigInt!
-    baseBalancePerShareX96: BigInt!
-    sharePriceAfterX96: BigInt!
 
     "(block number * MAX_LOG_COUNT + log index) for sorting"
     blockNumberLogIndex: BigInt!
@@ -117,7 +126,9 @@ type LimitOrderCreatedExchange @entity {
     isBid: Boolean!
     base: BigInt!
     priceX96: BigInt!
+    limitOrderType: Int!
     orderId: BigInt!
+    baseTaker: BigInt!
 
     "(block number * MAX_LOG_COUNT + log index) for sorting"
     blockNumberLogIndex: BigInt!
@@ -140,7 +151,52 @@ type LimitOrderCanceledExchange @entity {
     timestamp: BigInt!
 }
 
+type PartiallyExecuted @entity {
+    "format: <tx hash>-<log index>"
+    id: ID!
+
+    exchange: String!
+    maker: String!
+    market: String!
+    isBid: Boolean!
+    basePartial: BigInt!
+    quotePartial: BigInt!
+    partialRealizedPnl: BigInt!
+
+    "(block number * MAX_LOG_COUNT + log index) for sorting"
+    blockNumberLogIndex: BigInt!
+    timestamp: BigInt!
+}
+
+type LimitOrderSettled @entity {
+    "format: <tx hash>-<log index>"
+    id: ID!
+
+    exchange: String!
+    trader: String!
+    market: String!
+    base: BigInt!
+    quote: BigInt!
+    realizedPnl: BigInt!
+
+    "(block number * MAX_LOG_COUNT + log index) for sorting"
+    blockNumberLogIndex: BigInt!
+    timestamp: BigInt!
+}
+
 type MaxMarketsPerAccountChanged @entity {
+    "format: <tx hash>-<log index>"
+    id: ID!
+
+    exchange: String!
+    value: Int!
+
+    "(block number * MAX_LOG_COUNT + log index) for sorting"
+    blockNumberLogIndex: BigInt!
+    timestamp: BigInt!
+}
+
+type MaxOrdersPerAccountChanged @entity {
     "format: <tx hash>-<log index>"
     id: ID!
 
@@ -201,13 +257,13 @@ type ProtocolFeeRatioChanged @entity {
     timestamp: BigInt!
 }
 
-type IsMarketAllowedChanged @entity {
+type MarketStatusChanged @entity {
     "format: <tx hash>-<log index>"
     id: ID!
 
     exchange: String!
     market: String!
-    isMarketAllowed: Boolean!
+    status: Int!
 
     "(block number * MAX_LOG_COUNT + log index) for sorting"
     blockNumberLogIndex: BigInt!
@@ -306,18 +362,6 @@ type LimitOrderCanceledMarket @entity {
     timestamp: BigInt!
 }
 
-type PoolFeeRatioChanged @entity {
-    "format: <tx hash>-<log index>"
-    id: ID!
-
-    market: String!
-    value: Int!
-
-    "(block number * MAX_LOG_COUNT + log index) for sorting"
-    blockNumberLogIndex: BigInt!
-    timestamp: BigInt!
-}
-
 type FundingMaxPremiumRatioChanged @entity {
     "format: <tx hash>-<log index>"
     id: ID!
@@ -386,6 +430,7 @@ type Protocol @entity {
     protocolFeeRatio: Int!
     insuranceFundBalance: BigInt!
     maxMarketsPerAccount: Int!
+    maxOrdersPerAccount: Int!
     imRatio: Int!
     mmRatio: Int!
     rewardRatio: Int!
@@ -422,6 +467,7 @@ type Market @entity {
     emaNormalOrderRatio: Int!
     emaLiquidationRatio: Int!
     emaSec: BigInt!
+    status: Int!
 
     "block timestamp when the pool was added "
     timestampAdded: BigInt!
@@ -541,6 +587,7 @@ type Order @entity {
     orderId: BigInt!
     priceX96: BigInt!
     volume: BigInt!
+    limitOrderType: Int!
 
     "last updated block timestamp"
     timestamp: BigInt!
@@ -573,4 +620,19 @@ type AskOrderRow @entity {
     priceX96: BigInt!
     volume: BigInt!
     orderBook: OrderBook!
+}
+
+type ProfitRatio @entity {
+    "format: <trader address>-<startedAt>-<finishedAt>"
+    id: ID!
+
+    trader: String!
+    startedAt: BigInt!
+    finishedAt: BigInt!
+
+    "profit / deposit"
+    profitRatio: BigInt!
+
+    profit: BigInt!
+    deposit: BigInt!
 }
