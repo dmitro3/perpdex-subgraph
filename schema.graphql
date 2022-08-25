@@ -641,8 +641,8 @@ type ProfitRatio @entity {
     id: ID!
 
     trader: String!
-    startedAt: BigInt!
-    finishedAt: BigInt!
+    startedAt: Int!
+    finishedAt: Int!
 
     "profit / deposit"
     profitRatio: BigInt!

@@ -344,13 +344,13 @@ export function excludeAskOrderRow(marketAddr: string, priceX96: BigInt, volume:
     askOrderRow.save()
 }
 
-export function getOrCreateProfitRatio(traderAddr: string, startedAt: BigInt, finishedAt: BigInt): ProfitRatio {
+export function getOrCreateProfitRatio(traderAddr: string, startedAt: number, finishedAt: number): ProfitRatio {
     let profitRatio = ProfitRatio.load(`${traderAddr}-${startedAt}-${finishedAt}`)
     if (!profitRatio) {
         profitRatio = new ProfitRatio(`${traderAddr}-${startedAt}-${finishedAt}`)
         profitRatio.trader = traderAddr
-        profitRatio.startedAt = startedAt
-        profitRatio.finishedAt = finishedAt
+        profitRatio.startedAt = startedAt as i32
+        profitRatio.finishedAt = finishedAt as i32
         profitRatio.profitRatio = BI_ZERO
         profitRatio.profit = BI_ZERO
         profitRatio.deposit = BI_ZERO

@@ -10,6 +10,7 @@ export function pushMarket(markets: Array<string>, market: string): void {
     return
 }
 
-export function isWithinPeriod(timestamp: BigInt, startedAt: BigInt, finishedAt: BigInt): boolean {
-    return timestamp.ge(startedAt) && timestamp.le(finishedAt)
+export function isWithinPeriod(timestamp: BigInt, startedAt: number, finishedAt: number): boolean {
+    const ts = timestamp.toI32()
+    return startedAt <= ts && ts <= finishedAt
 }
