@@ -2,8 +2,8 @@
   "chainId": 280,
   "contracts": {
     "PerpdexExchange": {
-      "address": "0x48a45e23fd7673be7C63BbD5c068d946a66C605C",
-      "createdBlockNumber": 1230566,
+      "address": "0xb211D8BDeba40f0159444eE7ec7d8FF9B162D080",
+      "createdBlockNumber": 1348391,
       "name": "contracts/PerpdexExchange.sol:PerpdexExchange"
     }
   },
