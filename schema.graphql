@@ -1,5 +1,19 @@
 # entities one-to-one correspondence with event
 
+type CollateralBalanceSet @entity {
+    "format: <tx hash>-<log index>"
+    id: ID!
+
+    exchange: String!
+    trader: String!
+    beforeBalance: BigInt!
+    afterBalance: BigInt!
+
+    "(block number * MAX_LOG_COUNT + log index) for sorting"
+    blockNumberLogIndex: BigInt!
+    timestamp: BigInt!
+}
+
 type CollateralCompensated @entity {
     "format: <tx hash>-<log index>"
     id: ID!

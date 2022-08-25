@@ -1,4 +1,5 @@
 import {
+    CollateralBalanceSet as CollateralBalanceSetEvent,
     CollateralCompensated as CollateralCompensatedEvent,
     Deposited as DepositedEvent,
     ImRatioChanged as ImRatioChangedEvent,
@@ -20,6 +21,7 @@ import {
     Withdrawn as WithdrawnEvent,
 } from "../../generated/PerpdexExchange/PerpdexExchange"
 import {
+    CollateralBalanceSet,
     CollateralCompensated,
     Deposited,
     ImRatioChanged,
@@ -62,6 +64,40 @@ import {
     getOrCreateTraderMakerInfo,
     getOrCreateTraderTakerInfo,
 } from "../utils/stores"
+
+export function handleCollateralBalanceSet(event: CollateralBalanceSetEvent): void {
+    const collateralBalanceSet = new CollateralBalanceSet(
+        `${event.transaction.hash.toHexString()}-${event.logIndex.toString()}`,
+    )
+    collateralBalanceSet.exchange = event.address.toHexString()
+    collateralBalanceSet.blockNumberLogIndex = getBlockNumberLogIndex(event)
+    collateralBalanceSet.timestamp = event.block.timestamp
+    collateralBalanceSet.trader = event.params.trader.toHexString()
+    collateralBalanceSet.beforeBalance = event.params.beforeBalance
+    collateralBalanceSet.afterBalance = event.params.afterBalance
+
+    const trader = getOrCreateTrader(collateralBalanceSet.trader)
+    trader.collateralBalance = trader.collateralBalance
+        .plus(collateralBalanceSet.afterBalance)
+        .minus(collateralBalanceSet.beforeBalance)
+    trader.timestamp = collateralBalanceSet.timestamp
+
+    if (isWithinPeriod(collateralBalanceSet.timestamp, competitionStartedAt, competitionFinishedAt)) {
+        const profitRatio = getOrCreateProfitRatio(
+            collateralBalanceSet.trader,
+            competitionStartedAt,
+            competitionFinishedAt,
+        )
+        profitRatio.deposit = profitRatio.deposit
+            .plus(collateralBalanceSet.afterBalance)
+            .minus(collateralBalanceSet.beforeBalance)
+        profitRatio.profitRatio = profitRatio.deposit == BI_ZERO ? BI_ZERO : profitRatio.profit.div(profitRatio.deposit)
+        profitRatio.save()
+    }
+
+    collateralBalanceSet.save()
+    trader.save()
+}
 
 export function handleCollateralCompensated(event: CollateralCompensatedEvent): void {
     const collateralCompensated = new CollateralCompensated(

@@ -41,6 +41,8 @@ dataSources:
               - name: PerpdexExchange
                 file: ./abis/PerpdexExchange.abi.json
           eventHandlers:
+              - event: CollateralBalanceSet(indexed address,int256,int256)
+                handler: handleCollateralBalanceSet
               - event: CollateralCompensated(indexed address,uint256)
                 handler: handleCollateralCompensated
               - event: Deposited(indexed address,uint256)
