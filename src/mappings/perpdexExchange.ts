@@ -727,15 +727,16 @@ export function handleMarketClosed(event: MarketClosedEvent): void {
     marketClosed.timestamp = event.block.timestamp
     marketClosed.trader = event.params.trader.toHexString()
     marketClosed.market = event.params.market.toHexString()
+    marketClosed.positionValue = event.params.positionValue
     marketClosed.realizedPnl = event.params.realizedPnl
 
     const trader = getOrCreateTrader(marketClosed.trader)
-    trader.collateralBalance = trader.collateralBalance.plus(marketClosed.realizedPnl)
+    trader.collateralBalance = trader.collateralBalance.plus(marketClosed.positionValue).plus(marketClosed.realizedPnl)
     trader.timestamp = marketClosed.timestamp
 
     if (isWithinPeriod(marketClosed.timestamp, competitionStartedAt, competitionFinishedAt)) {
         const profitRatio = getOrCreateProfitRatio(marketClosed.trader, competitionStartedAt, competitionFinishedAt)
-        profitRatio.profit = profitRatio.profit.plus(marketClosed.realizedPnl)
+        profitRatio.profit = profitRatio.profit.plus(marketClosed.positionValue).plus(marketClosed.realizedPnl)
         profitRatio.profitRatio = profitRatio.deposit == BI_ZERO ? BI_ZERO : profitRatio.profit.div(profitRatio.deposit)
         profitRatio.save()
     }

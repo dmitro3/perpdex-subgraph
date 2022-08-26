@@ -362,6 +362,12 @@
       {
         "indexed": false,
         "internalType": "int256",
+        "name": "positionValue",
+        "type": "int256"
+      },
+      {
+        "indexed": false,
+        "internalType": "int256",
         "name": "realizedPnl",
         "type": "int256"
       }
