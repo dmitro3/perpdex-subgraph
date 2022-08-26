@@ -198,6 +198,20 @@ type LimitOrderSettled @entity {
     timestamp: BigInt!
 }
 
+type MarketClosed @entity {
+    "format: <tx hash>-<log index>"
+    id: ID!
+
+    exchange: String!
+    trader: String!
+    market: String!
+    realizedPnl: BigInt!
+
+    "(block number * MAX_LOG_COUNT + log index) for sorting"
+    blockNumberLogIndex: BigInt!
+    timestamp: BigInt!
+}
+
 type MaxMarketsPerAccountChanged @entity {
     "format: <tx hash>-<log index>"
     id: ID!

@@ -9,6 +9,7 @@ import {
     LiquidationRewardConfigChanged as LiquidationRewardConfigChangedEvent,
     LiquidityAdded as LiquidityAddedExchangeEvent,
     LiquidityRemoved as LiquidityRemovedExchangeEvent,
+    MarketClosed as MarketClosedEvent,
     MarketStatusChanged as MarketStatusChangedEvent,
     MaxMarketsPerAccountChanged as MaxMarketsPerAccountChangedEvent,
     MaxOrdersPerAccountChanged as MaxOrdersPerAccountChangedEvent,
@@ -31,6 +32,7 @@ import {
     LiquidationRewardConfigChanged,
     LiquidityAddedExchange,
     LiquidityRemovedExchange,
+    MarketClosed,
     MarketStatusChanged,
     MaxMarketsPerAccountChanged,
     MaxOrdersPerAccountChanged,
@@ -716,6 +718,30 @@ export function handleLimitOrderSettled(event: LimitOrderSettledEvent): void {
     trader.save()
     traderTakerInfo.save()
     daySummary.save()
+}
+
+export function handleMarketClosed(event: MarketClosedEvent): void {
+    const marketClosed = new MarketClosed(`${event.transaction.hash.toHexString()}-${event.logIndex.toString()}`)
+    marketClosed.exchange = event.address.toHexString()
+    marketClosed.blockNumberLogIndex = getBlockNumberLogIndex(event)
+    marketClosed.timestamp = event.block.timestamp
+    marketClosed.trader = event.params.trader.toHexString()
+    marketClosed.market = event.params.market.toHexString()
+    marketClosed.realizedPnl = event.params.realizedPnl
+
+    const trader = getOrCreateTrader(marketClosed.trader)
+    trader.collateralBalance = trader.collateralBalance.plus(marketClosed.realizedPnl)
+    trader.timestamp = marketClosed.timestamp
+
+    if (isWithinPeriod(marketClosed.timestamp, competitionStartedAt, competitionFinishedAt)) {
+        const profitRatio = getOrCreateProfitRatio(marketClosed.trader, competitionStartedAt, competitionFinishedAt)
+        profitRatio.profit = profitRatio.profit.plus(marketClosed.realizedPnl)
+        profitRatio.profitRatio = profitRatio.deposit == BI_ZERO ? BI_ZERO : profitRatio.profit.div(profitRatio.deposit)
+        profitRatio.save()
+    }
+
+    marketClosed.save()
+    trader.save()
 }
 
 export function handleMaxMarketsPerAccountChanged(event: MaxMarketsPerAccountChangedEvent): void {

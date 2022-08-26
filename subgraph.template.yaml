@@ -67,6 +67,8 @@ dataSources:
                 handler: handlePartiallyExecuted
               - event: LimitOrderSettled(indexed address,indexed address,int256,int256,int256)
                 handler: handleLimitOrderSettled
+              - event: MarketClosed(indexed address,indexed address,int256)
+                handler: handleMarketClosed
               - event: MaxMarketsPerAccountChanged(uint8)
                 handler: handleMaxMarketsPerAccountChanged
               - event: MaxOrdersPerAccountChanged(uint8)
