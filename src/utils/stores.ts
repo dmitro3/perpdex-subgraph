@@ -116,6 +116,9 @@ export function getOrCreateMarket(marketAddr: string): Market {
         market.emaNormalOrderRatio = 0
         market.emaLiquidationRatio = 0
         market.emaSec = BI_ZERO
+        market.fixedFeeRatio = 0
+        market.atrFeeRatio = 0
+        market.atrEmaBlocks = BI_ZERO
         market.status = 0
 
         market.timestampAdded = BI_ZERO

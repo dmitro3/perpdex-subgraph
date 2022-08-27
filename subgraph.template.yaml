@@ -121,6 +121,8 @@ templates:
             handler: handleLimitOrderCreatedMarket
           - event: LimitOrderCanceled(bool,uint256)
             handler: handleLimitOrderCanceledMarket
+          - event: PoolFeeConfigChanged(uint24,uint24,uint32)
+            handler: handlePoolFeeConfigChanged
           - event: FundingMaxPremiumRatioChanged(uint24)
             handler: handleFundingMaxPremiumRatioChanged
           - event: FundingMaxElapsedSecChanged(uint32)

@@ -391,6 +391,20 @@ type LimitOrderCanceledMarket @entity {
     timestamp: BigInt!
 }
 
+type PoolFeeConfigChanged @entity {
+    "format: <tx hash>-<log index>"
+    id: ID!
+
+    market: String!
+    fixedFeeRatio: Int!
+    atrFeeRatio: Int!
+    atrEmaBlocks: BigInt!
+
+    "(block number * MAX_LOG_COUNT + log index) for sorting"
+    blockNumberLogIndex: BigInt!
+    timestamp: BigInt!
+}
+
 type FundingMaxPremiumRatioChanged @entity {
     "format: <tx hash>-<log index>"
     id: ID!
@@ -496,6 +510,9 @@ type Market @entity {
     emaNormalOrderRatio: Int!
     emaLiquidationRatio: Int!
     emaSec: BigInt!
+    fixedFeeRatio: Int!
+    atrFeeRatio: Int!
+    atrEmaBlocks: BigInt!
     status: Int!
 
     "block timestamp when the pool was added "

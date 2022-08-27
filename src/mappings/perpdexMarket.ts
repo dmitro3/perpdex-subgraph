@@ -8,6 +8,7 @@ import {
     LimitOrderCreatedMarket,
     LiquidityAddedMarket,
     LiquidityRemovedMarket,
+    PoolFeeConfigChanged,
     PriceLimitConfigChanged,
     Swapped,
 } from "../../generated/schema"
@@ -20,6 +21,7 @@ import {
     LimitOrderCreated as LimitOrderCreatedEvent,
     LiquidityAdded as LiquidityAddedEvent,
     LiquidityRemoved as LiquidityRemovedEvent,
+    PoolFeeConfigChanged as PoolFeeConfigChangedEvent,
     PriceLimitConfigChanged as PriceLimitConfigChangedEvent,
     Swapped as SwappedEvent,
 } from "../../generated/templates/PerpdexMarket/PerpdexMarket"
@@ -57,7 +59,7 @@ export function handleFundingPaid(event: FundingPaidEvent): void {
     }
     market.cumBasePerLiquidityX96 = fundingPaid.cumBasePerLiquidityX96
     market.cumQuotePerLiquidityX96 = fundingPaid.cumQuotePerLiquidityX96
-    market.timestamp = event.block.timestamp
+    market.timestamp = fundingPaid.timestamp
 
     fundingPaid.save()
     market.save()
@@ -76,15 +78,15 @@ export function handleLiquidityAdded(event: LiquidityAddedEvent): void {
 
     const protocol = getOrCreateProtocol()
     protocol.makerVolume = protocol.makerVolume.plus(liquidityAdded.liquidity)
-    protocol.timestamp = event.block.timestamp
+    protocol.timestamp = liquidityAdded.timestamp
 
     const market = getOrCreateMarket(liquidityAdded.market)
     market.baseAmount = market.baseAmount.plus(liquidityAdded.base)
     market.quoteAmount = market.quoteAmount.plus(liquidityAdded.quote)
     market.liquidity = market.liquidity.plus(liquidityAdded.liquidity)
     market.makerVolume = market.makerVolume.plus(liquidityAdded.liquidity)
-    market.timestampAdded = event.block.timestamp
-    market.timestamp = event.block.timestamp
+    market.timestampAdded = liquidityAdded.timestamp
+    market.timestamp = liquidityAdded.timestamp
 
     liquidityAdded.save()
     protocol.save()
@@ -104,15 +106,15 @@ export function handleLiquidityRemoved(event: LiquidityRemovedEvent): void {
 
     const protocol = getOrCreateProtocol()
     protocol.makerVolume = protocol.makerVolume.plus(liquidityRemoved.liquidity)
-    protocol.timestamp = event.block.timestamp
+    protocol.timestamp = liquidityRemoved.timestamp
 
     const market = getOrCreateMarket(liquidityRemoved.market)
     market.baseAmount = market.baseAmount.minus(liquidityRemoved.base)
     market.quoteAmount = market.quoteAmount.minus(liquidityRemoved.quote)
     market.liquidity = market.liquidity.minus(liquidityRemoved.liquidity)
     market.makerVolume = market.makerVolume.plus(liquidityRemoved.liquidity)
-    market.timestampAdded = event.block.timestamp
-    market.timestamp = event.block.timestamp
+    market.timestampAdded = liquidityRemoved.timestamp
+    market.timestamp = liquidityRemoved.timestamp
 
     liquidityRemoved.save()
     protocol.save()
@@ -135,7 +137,7 @@ export function handleSwapped(event: SwappedEvent): void {
 
     const protocol = getOrCreateProtocol()
     protocol.takerVolume = protocol.takerVolume.plus(swapped.amount)
-    protocol.timestamp = event.block.timestamp
+    protocol.timestamp = swapped.timestamp
 
     const market = getOrCreateMarket(swapped.market)
     if (swapped.isExactInput) {
@@ -156,7 +158,7 @@ export function handleSwapped(event: SwappedEvent): void {
         }
     }
     market.takerVolume = market.takerVolume.plus(swapped.amount)
-    market.timestamp = event.block.timestamp
+    market.timestamp = swapped.timestamp
 
     swapped.save()
     protocol.save()
@@ -191,6 +193,27 @@ export function handleLimitOrderCanceledMarket(event: LimitOrderCanceledEvent): 
     limitOrderCanceled.save()
 }
 
+export function handlePoolFeeConfigChanged(event: PoolFeeConfigChangedEvent): void {
+    const poolFeeConfigChanged = new PoolFeeConfigChanged(
+        `${event.transaction.hash.toHexString()}-${event.logIndex.toString()}`,
+    )
+    poolFeeConfigChanged.blockNumberLogIndex = getBlockNumberLogIndex(event)
+    poolFeeConfigChanged.timestamp = event.block.timestamp
+    poolFeeConfigChanged.market = event.address.toHexString()
+    poolFeeConfigChanged.fixedFeeRatio = event.params.fixedFeeRatio
+    poolFeeConfigChanged.atrFeeRatio = event.params.atrFeeRatio
+    poolFeeConfigChanged.atrEmaBlocks = event.params.atrEmaBlocks
+
+    const market = getOrCreateMarket(poolFeeConfigChanged.market)
+    market.fixedFeeRatio = poolFeeConfigChanged.fixedFeeRatio
+    market.atrFeeRatio = poolFeeConfigChanged.atrFeeRatio
+    market.atrEmaBlocks = poolFeeConfigChanged.atrEmaBlocks
+    market.timestamp = poolFeeConfigChanged.timestamp
+
+    poolFeeConfigChanged.save()
+    market.save()
+}
+
 export function handleFundingMaxPremiumRatioChanged(event: FundingMaxPremiumRatioChangedEvent): void {
     const fundingMaxPremiumRatioChanged = new FundingMaxPremiumRatioChanged(
         `${event.transaction.hash.toHexString()}-${event.logIndex.toString()}`,
@@ -202,7 +225,7 @@ export function handleFundingMaxPremiumRatioChanged(event: FundingMaxPremiumRati
 
     const market = getOrCreateMarket(fundingMaxPremiumRatioChanged.market)
     market.fundingMaxPremiumRatio = fundingMaxPremiumRatioChanged.value
-    market.timestamp = event.block.timestamp
+    market.timestamp = fundingMaxPremiumRatioChanged.timestamp
 
     fundingMaxPremiumRatioChanged.save()
     market.save()
@@ -219,7 +242,7 @@ export function handleFundingMaxElapsedSecChanged(event: FundingMaxElapsedSecCha
 
     const market = getOrCreateMarket(fundingMaxElapsedSecChanged.market)
     market.fundingMaxElapsedSec = fundingMaxElapsedSecChanged.value
-    market.timestamp = event.block.timestamp
+    market.timestamp = fundingMaxElapsedSecChanged.timestamp
 
     fundingMaxElapsedSecChanged.save()
     market.save()
@@ -236,7 +259,7 @@ export function handleFundingRolloverSecChanged(event: FundingRolloverSecChanged
 
     const market = getOrCreateMarket(fundingRolloverSecChanged.market)
     market.fundingRolloverSec = fundingRolloverSecChanged.value
-    market.timestamp = event.block.timestamp
+    market.timestamp = fundingRolloverSecChanged.timestamp
 
     fundingRolloverSecChanged.save()
     market.save()
@@ -261,7 +284,7 @@ export function handlePriceLimitConfigChanged(event: PriceLimitConfigChangedEven
     market.emaNormalOrderRatio = priceLimitConfigChanged.emaNormalOrderRatio
     market.emaLiquidationRatio = priceLimitConfigChanged.emaLiquidationRatio
     market.emaSec = priceLimitConfigChanged.emaSec
-    market.timestamp = event.block.timestamp
+    market.timestamp = priceLimitConfigChanged.timestamp
 
     priceLimitConfigChanged.save()
     market.save()
