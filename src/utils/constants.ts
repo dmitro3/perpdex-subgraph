@@ -16,4 +16,4 @@ export const bid = "bid"
 export const ask = "ask"
 
 export const competitionStartedAt = 1661007600 // Todo: set the timestamp when the competition actually starts
-export const competitionFinishedAt = 1661612400 // Todo: set the timestamp when the competition actually finishes
+export const competitionFinishedAt = 1662040700 // Todo: set the timestamp when the competition actually finishes
