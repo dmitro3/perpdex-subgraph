@@ -120,7 +120,6 @@ export function getOrCreateMarket(marketAddr: string): Market {
         market.atrFeeRatio = 0
         market.atrEmaBlocks = BI_ZERO
         market.status = 0
-
         market.timestampAdded = BI_ZERO
         market.timestamp = BI_ZERO
         market.save()
