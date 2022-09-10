@@ -1,28 +1,15 @@
 # perpdex-subgraph
 
 ## Contribution
-
 Please see [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## Subgraphs
+- Arbitrum Rinkeby
+  - Explorer: `https://thegraph.com/hosted-service/subgraph/perpdex/perpdex-v1-arbitrum-rinkeby`
+  - HTTP: `https://api.thegraph.com/subgraphs/name/perpdex/perpdex-v1-arbitrum-rinkeby`
 
-### The Graph
+## Deployment
+Push to the develop branch and it will be automatically deployed.
 
--   Mumbai
-    -   Explorer: `https://thegraph.com/hosted-service/subgraph/krkzts/perpdex-mumbai`
-    -   HTTP: `https://api.thegraph.com/subgraphs/name/krkzts/perpdex-mumbai`
-    -   WebSocket: `wss:/api.thegraph.com/subgraphs/name/krkzts/perpdex-mumbai`
--   Rinkeby Inverse
-    -   Explorer: `https://thegraph.com/hosted-service/subgraph/krkzts/perpdex-rinkeby-inverse`
-    -   HTTP: `https://api.thegraph.com/subgraphs/name/krkzts/perpdex-rinkeby-inverse`
-    -   WebSocker: `wss://api.thegraph.com/subgraphs/name/krkzts/perpdex-rinkeby-inverse`
-
-```bash
-npm i
-
-# deploy to The Graph
-npx graph auth --product hosted-service <YOUR_THE_GRAPH_ACCESS_TOKEN>
-# create a subgraph in the graph dashboard first (need github admin permission)
-npm run deploy-the-graph:mumbai
-
-```
+## Related Projects
+- [perpdex-contract](https://github.com/perpdex/perpdex-contract)
