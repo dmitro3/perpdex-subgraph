@@ -119,17 +119,6 @@ export function handleCollateralCompensated(event: CollateralCompensatedEvent): 
     trader.collateralBalance = trader.collateralBalance.plus(collateralCompensated.amount)
     trader.timestamp = collateralCompensated.timestamp
 
-    if (isWithinPeriod(collateralCompensated.timestamp, competitionStartedAt, competitionFinishedAt)) {
-        const profitRatio = getOrCreateProfitRatio(
-            collateralCompensated.trader,
-            competitionStartedAt,
-            competitionFinishedAt,
-        )
-        profitRatio.deposit = profitRatio.deposit.plus(collateralCompensated.amount)
-        profitRatio.profitRatio = profitRatio.deposit == BI_ZERO ? BI_ZERO : profitRatio.profit.div(profitRatio.deposit)
-        profitRatio.save()
-    }
-
     collateralCompensated.save()
     protocol.save()
     trader.save()
